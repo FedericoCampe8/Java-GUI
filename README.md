@@ -21,6 +21,7 @@ How to use it:
 - make 
 - jafatt.jar
 
+Note: the "src" folder contains the java files, while the "solver" folder contains the solvers.
 Note: This is an ongoing project. Some bugs may be present!
 
 
