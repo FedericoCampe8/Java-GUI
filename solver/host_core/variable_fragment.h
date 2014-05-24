@@ -1,0 +1,111 @@
+/*********************************************************************
+ * CP-Variable FRAGMENT definition
+ * 
+ * A point variable describes an atom position. 
+ * It's domain is a the possible points within the interval
+ * [lower_bound, upper_bound]
+ *
+ * References:
+ * (wcb-11)
+ *********************************************************************/
+#ifndef FIASCO_VARIABLE_FRAGMENT__
+#define FIASCO_VARIABLE_FRAGMENT__
+
+#include "typedefs.h"
+#include "fragment.h"
+
+#include <iostream>
+#include <vector>
+
+class Constraint;
+class Fragment;
+class Bitset;
+
+
+typedef std::pair<int, int> frag_info; // <var, label>
+
+// the element of a fragment domain -- it gives the necessary
+// support to manage with bundles
+struct domain_frag_info {
+  std::vector<frag_info> frag_mate_info;
+  int frag_mate_idx;
+  bool explored;
+  
+  domain_frag_info();
+  domain_frag_info (const domain_frag_info& other); 
+  domain_frag_info& operator= (const domain_frag_info& other);
+  ~domain_frag_info() {};
+};
+//-
+
+
+class VariableFragment {
+ private:
+  int labeled;      //-1    if not labeled;
+                    // >=0  choice value after labeling
+  bool ground;
+  bool failed;
+  bool changed;
+  int last_trailed;
+  uint idx;        // index in the var list (@todo improve?)
+  AssemblyDirection _assembly_direction;
+  
+ public:
+  // domain_info contains element of type <LIST, num> where
+  // LIST is a vector of labels (or id == look in the case you have current fragment
+  // in rel with different Varaibles) associated to some fragment in relation with 
+  // current labeling choice (of this fragment)
+  std::vector < domain_frag_info > domain_info;
+  std::vector <Fragment> domain;
+  // List of constraints to be checked after variable is changed
+  std::vector<Constraint*> constr_dep;
+
+  VariableFragment (uint, std::vector<Fragment>);
+  VariableFragment (uint);
+  VariableFragment (const VariableFragment& other);
+  VariableFragment& operator= (const VariableFragment& other);
+  ~VariableFragment() {};
+
+  Fragment operator[] (uint i) const;
+  Fragment at(uint i) const;
+  void reset ();
+  
+  void add_domain_elem (const Fragment&);
+  void rm_domain_elem (uint);
+  frag_info get_domain_elem (uint) const;
+  void set_domain (const std::vector<domain_frag_info>&);
+  void reset_domain ();  
+  void set_domain_singleton(uint d);
+  void set_domain_explored (const Bitset& d);
+  void set_domain_explored (const std::vector<bool>&);
+  void get_domain_explored (std::vector<bool>&) const;
+  bool is_domain_explored (uint idx) const;
+  size_t domain_size () const; 
+
+  bool labeling ();
+  void skip_label (uint);
+  void set_labeled (int);
+  void reset_label ();
+  int get_label () const;
+  int get_next_label() const;
+
+  void set_ground ();
+  void set_ground (bool b);
+  void set_changed (bool b);
+  void set_failed (bool b);
+  void test_ground ();
+  void test_failed ();
+  bool is_ground () const;
+  bool is_failed () const;
+  bool is_changed () const;
+  bool is_in_bundle () const;
+  void set_assembly_direction (AssemblyDirection dir);
+  AssemblyDirection assembly_direction () const;
+
+  int get_idx () const;
+  int get_last_trailed () const;
+  void set_last_trailed (int lt);
+  void dump ();
+};
+
+#endif

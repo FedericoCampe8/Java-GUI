@@ -1,0 +1,33 @@
+% Parameters taken from: 
+% An Orientation-dependent Hydrogen Bonding Potential Improves Prediction of 
+% Specificity and Structure for Proteins and Protein–Protein Complexes.
+% By Tanja Kortemme, Alexandre V. Morozova, and David Baker.
+% See sup. material.
+% Row: Distance - 0.05 A per bin
+% Column: bb-helix, bb-sheet, bb-other
+0.000,0.000,0.000
+0.000,0.000,0.000
+0.000,0.000,0.000
+0.000,0.000,0.000
+0.000,0.000,0.000
+0.000,0.000,0.000
+0.000,0.000,0.000
+2.530,0.680,1.410
+0.810,-0.860,0.060
+0.140,-1.160,-0.180
+-0.790,-1.700,-0.840
+-1.200,-1.730,-1.150
+-1.300,-1.540,-1.220
+-1.360,-1.340,-1.370
+-0.870,-0.780,-1.050
+-0.350,-0.190,-0.670
+-0.180,0.030,-0.670
+0.180,0.410,-0.430
+0.310,0.650,-0.360
+0.760,1.200,0.040
+1.110,1.640,0.350
+0.930,1.610,0.290
+0.780,1.810,0.400
+0.400,1.850,0.280
+0.280,2.020,0.510
+

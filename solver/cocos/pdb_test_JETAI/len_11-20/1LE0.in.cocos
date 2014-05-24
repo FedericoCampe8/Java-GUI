@@ -1,0 +1,5 @@
+% Proteins Information
+TARGET_PROT pdb_test_JETAI/len_11-20/1LE0
+KNOWN_PROT  pdb_test_JETAI/len_11-20/1LE0
+S 1 4
+S 8 10

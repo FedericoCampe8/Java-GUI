@@ -1,0 +1,18 @@
+% Proteins Information
+TARGET_PROT pdb_test_JETAI/len_31-40/1ZDD
+KNOWN_PROT  pdb_test_JETAI/len_31-40/1ZDD
+% Structure Agents definition
+% Types: 
+% H - alpha helix
+% T - beta turn
+% E - beta strand
+% P - polyproline II
+% C - coil
+% Offset starting from AA 0
+%H [2, 13] p 1
+%H [19, 32] p 1
+%H [14, 16] [17, 18] s [3, 50]
+%A [14, 16] 
+%A [17, 18] p 4
+H 2 13
+H 19 32
