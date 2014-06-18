@@ -45,19 +45,24 @@ public class UpdateView{
         outputPanel.setProtein(model.getCurrentProtein());
         
         /* Prepare the view */
-        prepareStructure(0, Defs.EXTRACTION);
+        //prepareStructure(0, Defs.EXTRACTION);
+        prepareStructure(Defs.EXTRACTION);
+        
     }//newStructure
     
     /* Prepare the view on Jmol panels */
-    public void prepareStructure(int numStructure, int panel){
+    //public void prepareStructure(int numStructure, int panel){
+    public void prepareStructure(int panel){
         if(panel == Defs.EXTRACTION)
             extractionPanel.executeCmd(Defs.COMMAND_PREPARE_STRUCURE);
         else{
-            assemblingPanel.executeCmd(
+            /*assemblingPanel.executeCmd(
                     Utilities.prepareStructureString(numStructure)
                     );
-            view.upView.execute("set allowMoveAtoms TRUE; ", Defs.ASSEMBLING);
-            view.upView.execute("set allowModelKit TRUE; ", Defs.ASSEMBLING);
+             * 
+             */
+            assemblingPanel.executeCmd(
+                    Utilities.prepareStructureString());
         }
     }//prepareStructure
     
@@ -141,7 +146,7 @@ public class UpdateView{
         try{
             offset = Integer.parseInt(frg.getParameters()[Defs.FRAGMENT_OFFSET]);
         }catch(NumberFormatException nfe){}
-        
+        offset = offset - model.getCurrentProteinOffset();
         /* Debug */
         /* System.out.println("Offset to set: " + offset + " offset of protein: " 
                 + model.getCurrentProteinOffset() + " String fragment: " 
@@ -161,61 +166,37 @@ public class UpdateView{
     public void addFragment(Fragment frg){
         
         /* Select the fragment from Extraction panel */
-        extractionPanel.executeCmd(Utilities.selectFragmetString(frg));
+        //extractionPanel.executeCmd(Utilities.selectFragmetString(frg));
         
         /* Save the fragment on a PDB file */
-        extractionPanel.executeCmd(Defs.COMMAND_SAVE_ON_PDB);
+        //extractionPanel.executeCmd(Defs.COMMAND_SAVE_ON_PDB);
         String cmd;
         int start = Integer.parseInt(frg.getParameters()[Defs.FRAGMENT_START_AA]);
         int end = Integer.parseInt(frg.getParameters()[Defs.FRAGMENT_END_AA]);
-        System.out.println(start + " " + end);
         cmd = "select resno >=" + start + " and resno <=" + end;
+        
+        //File transfered in the assemblig panel
         extractionPanel.executeCmd(cmd);
-        //script = viewer.scriptWait("load append pdb::" + Defs.path_prot + structure.getPDBCode() + ".in.pdb" + "\"; ");
-        
-        extractionPanel.executeCmd("write pdb \"" + "fragment.pdb" + "\"; ");
-        
-        //extractionPanel.executeCmd("load pdb \"" + Defs.path_prot + model.getCurrentProtein().getPDBCode() + ".in.pdb" + "\"; ");
-        //extractionPanel.executeCmd("append pdb \"" + Defs.path_prot + model.getCurrentProtein().getPDBCode() + ".in.pdb" + "\"; ");
-        //extractionPanel.executeCmd("load append pdb::" + Defs.path_prot + model.getCurrentProtein().getPDBCode() + ".in.pdb" + "; ");
-        //extractionPanel.executeCmd("write pdb \"" + Defs.path_prot + model.getCurrentProtein().getPDBCode()+ "[" + (start -2) + "," + end +"]" + ".in.pdb" + "\"; ");
-        //cmd = "select resno >=" + (end + 1) + " and resno <=" + (end + 1);
-        //extractionPanel.executeCmd(cmd);
-        //extractionPanel.executeCmd("write pdb \"" + "next.pdb" + "\"; ");
+        extractionPanel.executeCmd("write pdb \"" + Defs.TEMP +  "fragments.pdb" + "\"; ");
         
         String text = "";
         String line;
         
         try {
-        //text = new Scanner(new File(Defs.DUMMY_PDB_FILE)).useDelimiter("\\A").next();
  
-          Scanner scanner = new Scanner(new File("fragment.pdb"));
-          //Scanner scr = new Scanner(new File("next.pdb"));
-          //ignore = scanner.nextLine();
-          //ignore = scanner.nextLine();
+          Scanner scanner = new Scanner(new File(Defs.TEMP + "fragments.pdb"));
           
           while (scanner.hasNextLine()) {
-              line = scanner.nextLine();/*
-              String[] parsedLine = line.split("\\s+");
-
-              if ((parsedLine[2].equals("N")) && (Integer.parseInt(parsedLine[5]) == start)) 
-                  line = scanner.nextLine();
-
-              if ((parsedLine[2].equals("N")) && (Integer.parseInt(parsedLine[5]) == end)) {
-                  text = text + line + "\n";
-                  break;
-              }*/
+              line = scanner.nextLine();
               text = text + line + "\n";
           }
-          //text = text + scr.nextLine() + "\n";
           scanner.close();
-          //text = new Scanner(new File(Defs.DUMMY_PDB_FILE)).useDelimiter("\n").next();
         } catch (IOException e) {
         }
         
         try {
             PrintWriter out = new PrintWriter(new BufferedWriter(
-                    new FileWriter(Defs.path_prot + model.idProteinCode +".in.pdb", true)));
+                    new FileWriter(Defs.PROTEINS_PATH + model.idProteinCode +".in.pdb", true)));
             out.println("MODEL " + ++i);
             out.print(text);
             out.println("ENDMDL");
@@ -234,14 +215,10 @@ public class UpdateView{
                     + "panel: " + nfe);
             return;
         }
-        /*
-        if(fragmentNum < 2)
-            assemblingPanel.executeCmd(Defs.COMMAND_LOAD_FROM_PDB);
-        else
-            assemblingPanel.executeCmd(Defs.COMMAND_LOAD_APPEND_FROM_PDB);
         
         /* Prepare the structure */
-        prepareStructure(fragmentNum, Defs.ASSEMBLING);
+        //prepareStructure(fragmentNum, Defs.ASSEMBLING);
+        //prepareStructure(Defs.ASSEMBLING);
     }//addFragment
     
     public void prepareFragments(){
@@ -281,8 +258,8 @@ public class UpdateView{
         Fragment currentFragment;
         Fragment nextFragment;
         /* Connect each fragment to its successor */
-        for(int i = 0; i < numFragments; i++){
-            currentFragment = model.getAllFragmentsA().get(i);
+        for(int j = 0; j < numFragments; j++){
+            currentFragment = model.getAllFragmentsA().get(j);
             nextFragment = model.getNextFragment(currentFragment);   //----- problem
             
             /* Draw a line between the two fragments */
@@ -329,9 +306,9 @@ public class UpdateView{
         int numCon = constraints.length;
         
         /* Color all the constraints imposed on the fragment */
-        for(int i = 0; i < numCon; i++)
-            if(constraints[i])
-                colorSpecificConstraint(frg, i);
+        for(int j = 0; j < numCon; j++)
+            if(constraints[j])
+                colorSpecificConstraint(frg, j);
     }//colorConstraints
     
     /* Color a specific constraint */
@@ -351,8 +328,8 @@ public class UpdateView{
         int size = frgs.size();
         
         /* Color all the fragments belonging to the frg's group */
-        for(int i = 0; i < size; i++){
-            fragment = frgs.get(i);
+        for(int j = 0; j < size; j++){
+            fragment = frgs.get(j);
             if(fragment.getConstraints()[Defs.CONSTRAINT_BLOCK] &&
                fragment.getGroup().equals(fragmentGroup)){
                 String color = "color " + Utilities.getGroupColor(fragmentGroup);

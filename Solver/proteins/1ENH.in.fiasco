@@ -1,0 +1,13 @@
+% Database information
+FRAGMENTDB  DB/loopdb.dat
+COULOMBPAR  config/coulomb.csv
+LJPARAMETER config/lenard_jones.csv
+HDPARAMETER config/h_distances.csv
+HAPARAMETER config/h_angles.csv
+CONTACT     config/contact.csv
+TORSPAR     config/table_corr.pot
+% Proteins Information
+TARGET_PROT proteins/1ENH.cocos
+KNOWN_PROT  proteins/1ENH.cocos
+CONSTRAINTS proteins/1ENH.in.con
+FRAG_SEC_FL proteins/1ENH.in.pdb

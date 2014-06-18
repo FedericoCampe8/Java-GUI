@@ -5,6 +5,7 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
 import java.awt.FlowLayout;
@@ -17,9 +18,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextField;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.SpringLayout;
 import javax.swing.JComboBox;
+import javax.swing.JCheckBox;
+import javax.swing.BorderFactory;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.util.List;
@@ -52,22 +55,25 @@ public class ConstraintPanel extends JFrame implements Runnable{
     int firstPosition, lastPosition;
     private ArrayList<String> choice;
     private ArrayList<Fragment> fragments;
-    //private Structure structure;
+    private Structure structure;
+    private UserFrame view;
     
     private JPanel inPanel, inSubPanel, exitPanel;
     private JPanel optionPanel;
-    private JScrollPane scroll;
+    private JScrollPane scroll,scr;
     
     private JButton ok, cancel, info, expand;
     
     private boolean expanded = false;
+    private boolean ruleOn;
+    public boolean distance = false;
     
     private ConstraintInfoPanel cip;
     
     Toolkit t = Toolkit.getDefaultToolkit();
     Dimension screensize = t.getScreenSize();
     
-    double widthFrame = (screensize.getWidth() * 50.0) / 100.0;  //960
+    double widthFrame = (screensize.getWidth() * 55.0) / 100.0;  //960
     double heighFrame = (screensize.getHeight() * 51.0) / 100.0;  //540
     
     private String currentDir = System.getProperty("user.dir");
@@ -80,16 +86,18 @@ public class ConstraintPanel extends JFrame implements Runnable{
     ImageIcon iconReduce = new ImageIcon(reduceImage);
 
     
-    public ConstraintPanel(UserFrame view, Structure structure, ArrayList<Fragment> fragments){
+    public ConstraintPanel(UserFrame view, Structure structure, ArrayList<Fragment> fragments, boolean ruleOn){
         super("Constraint Panel");
-        setup(view, structure, fragments);
+        setup(view, structure, fragments, ruleOn);
     }
     
     /* Setup */
-    private void setup(UserFrame view, Structure structure, ArrayList<Fragment> fragments){
+    private void setup(UserFrame view, Structure structure, ArrayList<Fragment> fragments, boolean ruleOn){
         
+        this.view = view;
+        this.structure = structure;
         this.fragments = fragments;
-        //this.structure = structure;
+        this.ruleOn = ruleOn;
         
         Chain chain = structure.getChain(0);
         List groups = chain.getAtomGroups("amino");
@@ -98,20 +106,14 @@ public class ConstraintPanel extends JFrame implements Runnable{
         firstPosition = Utilities.getAAPosition(firstAA);
         lastPosition = Utilities.getAAPosition(lastAA);
         
-        inPanel = new JPanel();
-        inSubPanel = new JPanel();
+        inPanel = new JPanel(new BorderLayout());
+        inSubPanel = new JPanel(new BorderLayout());
         optionPanel = new JPanel();
         exitPanel = new JPanel();
         
         /* Setup layout */
-        setLocation((int)(view.getX() + (int)(view.getWidth()/4)),
-                    (int)(view.getY() + (int)(view.getHeight()/4)));
         setPreferredSize(new Dimension((int)widthFrame/2, (int)heighFrame-250));
-        setMinimumSize(new Dimension((int)widthFrame/2, (int)heighFrame-250));
-        //setResizable(false);
-        
-        inPanel.setLayout(new BorderLayout());
-        inSubPanel.setLayout(new BorderLayout());
+        //setMinsetMimumSize(new Dimension((int)widthFrame/2, (int)heighFrame-250));
         
         bool = new boolean[10];
         Arrays.fill(bool, Boolean.FALSE);
@@ -119,6 +121,10 @@ public class ConstraintPanel extends JFrame implements Runnable{
         
         /* Internal panel */
         setConstraintPanel = new SetConstraintPanel();
+        setConstraintPanel.setBorder(BorderFactory.createTitledBorder("Options"));
+        scr = new JScrollPane(setConstraintPanel,
+                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         
         /* Lower Panel */
         msArea = new MessageArea(3, 10);
@@ -132,10 +138,11 @@ public class ConstraintPanel extends JFrame implements Runnable{
             }
         });
         
-        ok = new OpButton("Ok", "Set all the constraint and exit") {
+        ok = new OpButton("Run!", "Set all the constraint and Run Fiasco!") {
             @Override
             public void buttonEvent(ActionEvent evt){
                 setConstraintPanel.setConstraints();
+                solveEvent();
                 setVisible(false);
                 dispose();
             }
@@ -166,7 +173,7 @@ public class ConstraintPanel extends JFrame implements Runnable{
         };
         expand.setPreferredSize(new Dimension(140, 15));
         expand.setFocusPainted(false);
-        //expand.setBorderPainted(false);
+        expand.setBorderPainted(false);
         
         exitPanel.add(ok);
         exitPanel.add(cancel);
@@ -177,25 +184,30 @@ public class ConstraintPanel extends JFrame implements Runnable{
         optionPanel.add(expand, BorderLayout.NORTH);
         optionPanel.add(exitPanel, BorderLayout.CENTER);
 		
-        inSubPanel.add(setConstraintPanel, BorderLayout.CENTER);
+        inSubPanel.add(scr, BorderLayout.CENTER);
         inSubPanel.add(optionPanel, BorderLayout.SOUTH);
         
         /* Add panels */
         inPanel.add(inSubPanel, BorderLayout.CENTER);
         inPanel.add(scroll, BorderLayout.SOUTH);
         /* Print some infos */
-        msArea.writeln("Please set the constraint to the model.", false);
-        msArea.writeln("Add a constraint to the textfield and then press the related button.", false);
-        msArea.writeln("If a textfield is not filled, the constraint will not be added.", false);
+        msArea.writeln("Please set the constraint to the Fiasco.", false);
     }//setup
     
     @Override
     public void run() {
 	pack();
+        setLocationRelativeTo(null);
         Container ct = getContentPane();
         ct.add(inPanel);
         setVisible(true);
     }//run
+    
+    private void solveEvent(){
+        
+        ((AssemblingPanel) view.getPanel(Defs.ASSEMBLING)).runFiasco();
+
+    }
     
     public void infoEvent(){
         cip = new ConstraintInfoPanel();
@@ -208,16 +220,22 @@ public class ConstraintPanel extends JFrame implements Runnable{
     
     public void expandEvent(){
         if(expanded){
-            setMinimumSize(new Dimension((int)widthFrame/2, (int)heighFrame-250));
+            //setMinimumSize(new Dimension((int)widthFrame/2, (int)heighFrame-250));
             this.setSize(new Dimension((int)widthFrame/2, (int)heighFrame-250));
+            setLocationRelativeTo(null);
             expanded = false;
             expand.setIcon(iconExpand);
         }else{
-            setMinimumSize(new Dimension((int)widthFrame, (int)heighFrame));
+            //setMinimumSize(new Dimension((int)widthFrame, (int)heighFrame));
             this.setSize(new Dimension((int)widthFrame, (int)heighFrame));
+            setLocationRelativeTo(null);
             expanded = true;
             expand.setIcon(iconReduce);
         }
+    }
+    
+    public boolean measures(){
+        return setConstraintPanel.measures.isSelected();
     }
     
     public class SetConstraintPanel extends JPanel{
@@ -228,6 +246,7 @@ public class ConstraintPanel extends JFrame implements Runnable{
         JPanel uniPanel;
         JPanel ellPanel;
         JPanel jmPanel, ussPanel;
+        JPanel advancedPanel;
         
         JLabel dsLabel, msLabel;
         JLabel tsLabel, ttLabel;
@@ -237,31 +256,33 @@ public class ConstraintPanel extends JFrame implements Runnable{
         JLabel dgeqLabel, dleqLabel;
         JLabel uniLabel, ellLabel;
         JLabel sumRadiiLabel;
+        JLabel armstrong, aminoacid;
         
-        JTextField domainSizeText;
-        JTextField maxSolText;
-        JTextField timeOutSearchText;
-        JTextField timeOutTotalText;
-        JTextField fdgeqText, sdgeqText, dgeqText;
-        JTextField fdleqText, sdleqText, dleqText;
-        JTextField uniText, uniVoxText;
-        JTextField ellText, sumRadiiText;
-        JTextField jm1Text, jm2Text;
-        JTextField clust1Text, clust2Text;
-        JTextField sp1Text, sp2Text;
-        JTextField uss1Text, uss2Text;
-        JTextField voxText;
-        JTextField x1Text, y1Text, z1Text;
-        JTextField x2Text, y2Text, z2Text;
+        HintTextField domainSizeText;
+        HintTextField maxSolText;
+        HintTextField timeOutSearchText;
+        HintTextField timeOutTotalText;
+        HintTextField fdgeqText, sdgeqText, dgeqText;
+        HintTextField fdleqText, sdleqText, dleqText;
+        HintTextField uniText, uniVoxText;
+        HintTextField ellText, sumRadiiText;
+        HintTextField jm1Text, jm2Text;
+        HintTextField clust1Text, clust2Text;
+        HintTextField sp1Text, sp2Text;
+        HintTextField uss1Text, uss2Text;
+        HintTextField voxText;
+        HintTextField x1Text, y1Text, z1Text;
+        HintTextField x2Text, y2Text, z2Text;
         
         //JButton addDS, addMS, addTS, addTT;
-        JButton addJM, addUSS;
-        JButton addDGEQ, addDLEQ;
-        JButton addUniform, addEllipsoid;
+        OpButton addJM, addUSS;
+        OpButton addDGEQ, addDLEQ;
+        OpButton addUniform, addEllipsoid;
         
         JComboBox arrows;
+        JCheckBox measures;
         
-        GridBagConstraints c = new GridBagConstraints();
+        GridBagConstraints c;
 
         /* Values */
         
@@ -278,6 +299,7 @@ public class ConstraintPanel extends JFrame implements Runnable{
             ellPanel = new JPanel();
             jmPanel = new JPanel();
             ussPanel = new JPanel();
+            advancedPanel = new JPanel(new GridBagLayout());
             
             jmList = new ArrayList<Integer>();
             ussList = new ArrayList<Integer>();
@@ -288,45 +310,7 @@ public class ConstraintPanel extends JFrame implements Runnable{
             ellList = new ArrayList<Double>();
             choice = new ArrayList<String>();
             
-            
-            /*Add domain size Button
-            
-            
-            addDS = new OpButton("Add DS", "Click to set a domain size constraint") {
-                @Override
-                public void buttonEvent(ActionEvent evt){
-                    addDSEvent();
-                }
-            };
-            
-            /*Add maximum solution Button
-            
-            addMS = new OpButton("Add MS", "Click to set a maximum solution constraint") {
-                @Override
-                public void buttonEvent(ActionEvent evt){
-                    addMSEvent();
-                }
-            };
-            
-            /*Add timeout search Button
-            
-            addTS = new OpButton("Add TS", "Click to set a timeout search constraint") {
-                @Override
-                public void buttonEvent(ActionEvent evt){
-                    addTSEvent();
-                }
-            };
-            
-            /*Add total timeout Button
-            
-            addTT = new OpButton("Add TT", "Click to set a total timeout") {
-                @Override
-                public void buttonEvent(ActionEvent evt){
-                    addTTEvent();
-                }
-            };
-
-             */
+            c = new GridBagConstraints();
             
             addDGEQ = new OpButton("Add D-GEQ", "Click to set a Distant GEQ Constraint") {
                 @Override
@@ -380,95 +364,112 @@ public class ConstraintPanel extends JFrame implements Runnable{
             //arrows.addItem("<->");
             arrows.setSelectedIndex(0);
             
+            measures = new JCheckBox("Add Measures Constraints from Assembling Panel.",false);
+            measures.setEnabled(ruleOn);
+            measures.addActionListener(
+                    new ActionListener(){
+                        @Override
+                        public void actionPerformed(ActionEvent e){
+                            if(measures.isSelected()){
+                                msArea.writeln("Add Measures Constraint could affect"
+                                        + " the number of the solutions.");
+                                distance = true;
+                            }else{
+                                distance = false;
+                            }
+                            
+                        }
+                    });
+            
              /* Text fields */
-            domainSizeText = new JTextField(10);
-            domainSizeText.setText("10");
+            domainSizeText = new HintTextField(" Int ", 10);
+            domainSizeText.setHintText("10");
             domainSizeText.setEnabled(true);
             
-            maxSolText = new JTextField(10);
-            maxSolText.setText("1000000");
+            maxSolText = new HintTextField(" Int ", 10);
+            maxSolText.setHintText("1000000");
             maxSolText.setEnabled(true);
             
-            timeOutSearchText = new JTextField(10);
-            timeOutSearchText.setText("60");
+            timeOutSearchText = new HintTextField(" Sec ", 10);
+            timeOutSearchText.setHintText("60");
             timeOutSearchText.setEnabled(true);
             
-            timeOutTotalText = new JTextField(10);
-            timeOutTotalText.setText("120");
+            timeOutTotalText = new HintTextField(" Sec ", 10);
+            timeOutTotalText.setHintText("120");
             timeOutTotalText.setEnabled(true);
             
-            fdgeqText = new JTextField(5);
+            fdgeqText = new HintTextField(" Start AA ", 10);
             fdgeqText.setEnabled(true);
-            sdgeqText = new JTextField(5);
+            sdgeqText = new HintTextField(" End AA ", 10);
             sdgeqText.setEnabled(true);
-            dgeqText = new JTextField(5);
+            dgeqText = new HintTextField(" Distance in \u212B ", 10);
             dgeqText.setEnabled(true);
             
-            fdleqText = new JTextField(5);
+            fdleqText = new HintTextField(" Start AA ", 10);
             fdleqText.setEnabled(true);
-            sdleqText = new JTextField(5);
+            sdleqText = new HintTextField(" End AA ", 10);
             sdleqText.setEnabled(true);
-            dleqText = new JTextField(5);
+            dleqText = new HintTextField(" Distance in \u212B ", 10);
             dleqText.setEnabled(true);
             
-            uniText = new JTextField(15);
+            uniText = new HintTextField(" List of AA ", 15);
             uniText.setEnabled(true);
             uniText.setPreferredSize(addUniform.getPreferredSize());
-            uniVoxText = new JTextField(5);
+            uniVoxText = new HintTextField(" Voxel in \u212B ",  10);
             uniVoxText.setEnabled(true);
             uniVoxText.setPreferredSize(addUniform.getPreferredSize());
             
-            ellText = new JTextField(15);
+            ellText = new HintTextField(" List of AA ", 15);
             ellText.setEnabled(true);
             ellText.setPreferredSize(addEllipsoid.getPreferredSize());
-            x1Text= new JTextField(3);
+            x1Text= new HintTextField(" x ", 3);
             x1Text.setEnabled(true);
             x1Text.setPreferredSize(addEllipsoid.getPreferredSize());
-            y1Text= new JTextField(3);
+            y1Text= new HintTextField(" y ", 3);
             y1Text.setEnabled(true);
             y1Text.setPreferredSize(addEllipsoid.getPreferredSize());
-            z1Text= new JTextField(3);
+            z1Text= new HintTextField(" z ", 3);
             z1Text.setEnabled(true);
             z1Text.setPreferredSize(addEllipsoid.getPreferredSize());
-            x2Text= new JTextField(3);
+            x2Text= new HintTextField(" x ", 3);
             x2Text.setEnabled(true);
             x2Text.setPreferredSize(addEllipsoid.getPreferredSize());
-            y2Text= new JTextField(3);
+            y2Text= new HintTextField(" y ", 3);
             y2Text.setEnabled(true);
             y2Text.setPreferredSize(addEllipsoid.getPreferredSize());
-            z2Text= new JTextField(3);
+            z2Text= new HintTextField(" z ", 3);
             z2Text.setEnabled(true);
             z2Text.setPreferredSize(addEllipsoid.getPreferredSize());
-            sumRadiiText= new JTextField(3);
+            sumRadiiText= new HintTextField(" Int ", 3);
             sumRadiiText.setEnabled(true);            
             sumRadiiText.setPreferredSize(addEllipsoid.getPreferredSize());
             
-            jm1Text = new JTextField(5);
+            jm1Text = new HintTextField(" Start AA ", 6);
             jm1Text.setEnabled(true);
             jm1Text.setPreferredSize(addJM.getPreferredSize());
-            jm2Text = new JTextField(5);
+            jm2Text = new HintTextField(" End AA ", 6);
             jm2Text.setEnabled(true);
             jm2Text.setPreferredSize(addJM.getPreferredSize());
-            sp1Text = new JTextField(5);
-            sp1Text.setEnabled(true);
-            sp1Text.setPreferredSize(addJM.getPreferredSize());
-            sp2Text = new JTextField(5);
-            sp2Text.setEnabled(true);
-            sp2Text.setPreferredSize(addJM.getPreferredSize());
-            clust1Text = new JTextField(5);
+            clust1Text = new HintTextField(" Min ", 3);
             clust1Text.setEnabled(true);
             clust1Text.setPreferredSize(addJM.getPreferredSize());
-            clust2Text = new JTextField(5);
+            clust2Text = new HintTextField(" Max ", 3);
             clust2Text.setEnabled(true);
             clust2Text.setPreferredSize(addJM.getPreferredSize());
+            sp1Text = new HintTextField(" Tol in \u212B ", 7);
+            sp1Text.setEnabled(true);
+            sp1Text.setPreferredSize(addJM.getPreferredSize());
+            sp2Text = new HintTextField(" Tol in deg ", 7);
+            sp2Text.setEnabled(true);
+            sp2Text.setPreferredSize(addJM.getPreferredSize());
             
-            uss1Text = new JTextField(5);
+            uss1Text = new HintTextField(" Start AA ", 6);
             uss1Text.setEnabled(true);
             uss1Text.setPreferredSize(addUSS.getPreferredSize());
-            uss2Text = new JTextField(5);
+            uss2Text = new HintTextField(" End AA ", 6);
             uss2Text.setEnabled(true);
             uss2Text.setPreferredSize(addUSS.getPreferredSize());
-            voxText = new JTextField(5);
+            voxText = new HintTextField(" Voxel in \u212B ", 10);
             voxText.setEnabled(true);
             voxText.setPreferredSize(addUSS.getPreferredSize());
 
@@ -506,8 +507,8 @@ public class ConstraintPanel extends JFrame implements Runnable{
             distancePanel.add(sdleqText);
             distancePanel.add(dleqText);
             distancePanel.add(addDLEQ);
-            
-            uniPanel.add(uniLabel = new JLabel( " Uniform: ", JLabel.TRAILING));
+
+            uniPanel.add(uniLabel = new JLabel( " Unique: ", JLabel.TRAILING));
             uniLabel.setLabelFor(uniText);
             uniPanel.add(uniText);
             uniPanel.add(new JLabel (" Voxel Side: "));
@@ -517,11 +518,11 @@ public class ConstraintPanel extends JFrame implements Runnable{
             ellPanel.add(ellLabel = new JLabel( " Ellipsoid: ", JLabel.TRAILING));
             ellLabel.setLabelFor(ellText);
             ellPanel.add(ellText);
-            ellPanel.add(new JLabel (" f1: "));
+            ellPanel.add(new JLabel (" focus1: "));
             ellPanel.add(x1Text);
             ellPanel.add(y1Text);
             ellPanel.add(z1Text);
-            ellPanel.add(new JLabel (" f2: "));
+            ellPanel.add(new JLabel (" focus2: "));
             ellPanel.add(x2Text);
             ellPanel.add(y2Text);
             ellPanel.add(z2Text);
@@ -555,62 +556,41 @@ public class ConstraintPanel extends JFrame implements Runnable{
             SpringUtilities.makeCompactGrid(setPanel,4,2,10,10,10,10);
             SpringUtilities.makeCompactGrid(distancePanel,2,5,10,10,10,10);
             
-            //setLayout(new FlowLayout(FlowLayout.CENTER));
-            //setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-            //setLayout(new GridLayout(6,0));
+            
             setLayout(new GridBagLayout());
+            
+            advancedPanel.setBorder(BorderFactory.createTitledBorder("Advanced Options"));
+            c.gridy = 0;
+            advancedPanel.add(distancePanel, c);
+            c.gridy = 1;
+            advancedPanel.add(uniPanel, c);
+            c.gridy = 2;
+            advancedPanel.add(ellPanel, c);
+            c.gridy = 3;
+            advancedPanel.add(jmPanel, c);
+            c.gridy = 4;
+            advancedPanel.add(ussPanel, c);
             
             update(false);
             
-            /*
-            add(setPanel, c);
-            //c.fill = GridBagConstraints.VERTICAL;
-            //c.gridx = 0;
-            c.gridy = 1;
-            /*add(distancePanel, c);
-            //c.fill = GridBagConstraints.VERTICAL;
-            //c.gridx = 0;
-            c.gridy = 2;
-            add(uniPanel, c);
-            //c.fill = GridBagConstraints.VERTICAL;
-            //c.gridx = 0;
-            c.gridy = 3;
-            add(ellPanel, c);
-            //c.fill = GridBagConstraints.VERTICAL;
-            //c.gridx = 0;
-            c.gridy = 4;
-            add(jmPanel, c);
-            //c.fill = GridBagConstraints.VERTICAL;
-            //c.gridx = 0;
-            c.gridy = 5;
-            add(ussPanel, c);*/
+            
         }//setup
         
         public void update(Boolean expanded){
             
             c.fill = GridBagConstraints.VERTICAL;
-            c.gridx = 1;
+            c.gridx = 0; //1
             c.gridy = 0;
             
             add(setPanel, c);
             c.gridy = 1;
+            add(measures,c);
+            c.gridy = 2;
         
             if(expanded){
-                add(distancePanel, c);
-                c.gridy = 2;
-                add(uniPanel, c);
-                c.gridy = 3;
-                add(ellPanel, c);
-                c.gridy = 4;
-                add(jmPanel, c);
-                c.gridy = 5;
-                add(ussPanel, c);                
+                add(advancedPanel,c);
             }else{
-                remove(distancePanel);
-                remove(uniPanel);
-                remove(ellPanel);
-                remove(jmPanel);
-                remove(ussPanel);
+                remove(advancedPanel);
             }
         }
         
@@ -639,12 +619,12 @@ public class ConstraintPanel extends JFrame implements Runnable{
                 firstsp = Double.parseDouble(sp1);
                 secondsp = Integer.parseInt(sp2);
             }catch(NumberFormatException nfe){
-                jm1Text.setText("");
-                jm2Text.setText("");
-                clust1Text.setText("");
-                clust2Text.setText("");
-                sp1Text.setText("");
-                sp2Text.setText("");
+                jm1Text.setHintText("");
+                jm2Text.setHintText("");
+                clust1Text.setHintText("");
+                clust2Text.setHintText("");
+                sp1Text.setHintText("");
+                sp2Text.setHintText("");
                 msArea.writeln("Not a number: " + nfe, true);
                 return;
             }
@@ -688,8 +668,8 @@ public class ConstraintPanel extends JFrame implements Runnable{
             }
             
             if(firstjm >= secondjm){
-               jm1Text.setText("");
-               jm2Text.setText("");
+               jm1Text.setHintText("");
+               jm2Text.setHintText("");
                msArea.writeln("Please, select proper JM values", true);
                return; 
             }
@@ -717,12 +697,12 @@ public class ConstraintPanel extends JFrame implements Runnable{
                     + secondnc + " " + " sim-param=" + firstsp + " "
                     + secondsp + "\" added", true);
             
-            jm1Text.setText("");
-            jm2Text.setText("");
-            clust1Text.setText("");
-            clust2Text.setText("");
-            sp1Text.setText("");
-            sp2Text.setText("");
+            jm1Text.setHintText("");
+            jm2Text.setHintText("");
+            clust1Text.setHintText("");
+            clust2Text.setHintText("");
+            sp1Text.setHintText("");
+            sp2Text.setHintText("");
             
         }
         
@@ -763,16 +743,16 @@ public class ConstraintPanel extends JFrame implements Runnable{
                 seconduss = Integer.parseInt(uss2);
                 voxelS = Integer.parseInt(vox);
             }catch(NumberFormatException nfe){
-                uss1Text.setText("");
-                uss2Text.setText("");
-                voxText.setText("");
+                uss1Text.setHintText("");
+                uss2Text.setHintText("");
+                voxText.setHintText("");
                 msArea.writeln("Not a number: " + nfe, true);
                 return;
             }
             
             if(firstuss >= seconduss){
-               uss1Text.setText("");
-               uss2Text.setText("");
+               uss1Text.setHintText("");
+               uss2Text.setHintText("");
                msArea.writeln("Please, select proper USS values", true);
                return; 
             }
@@ -785,16 +765,16 @@ public class ConstraintPanel extends JFrame implements Runnable{
                     + " '->' " + " " + seconduss + " : voxel-side "
                     + voxelS + "\" added", true);
             
-            uss1Text.setText("");
-            uss2Text.setText("");
-            voxText.setText("");
+            uss1Text.setHintText("");
+            uss2Text.setHintText("");
+            voxText.setHintText("");
             
             
         }
         
         private void addDSEvent(){
             
-            bool[Defs.Domain_Size] = true;
+            bool[Defs.DOMAIN] = true;
             
             String ds;
             
@@ -807,21 +787,21 @@ public class ConstraintPanel extends JFrame implements Runnable{
                     msArea.writeln("Please select proper Domain Size value.");
                     return;
                 }
-                values[Defs.Domain_Size] = Integer.parseInt(ds);
+                values[Defs.DOMAIN] = Integer.parseInt(ds);
             }catch(NumberFormatException nfe){
-                domainSizeText.setText("");
+                domainSizeText.setHintText("");
                 msArea.writeln("Not a number: " + nfe, true);
                 return;
             }
             
             msArea.writeln("Constraint \"--domain-size " +
-                    + values[Defs.Domain_Size] + "\" added", true);
+                    + values[Defs.DOMAIN] + "\" added", true);
             
         }
         
         private void addMSEvent(){
             
-            bool[Defs.Maximum_Solutions] = true;
+            bool[Defs.SOLUTIONS] = true;
             
             String ms;
             
@@ -834,21 +814,21 @@ public class ConstraintPanel extends JFrame implements Runnable{
                     msArea.writeln("Please select proper Maximum Sulutions value.");
                     return;
                 }
-                values[Defs.Maximum_Solutions] = Integer.parseInt(ms);
+                values[Defs.SOLUTIONS] = Integer.parseInt(ms);
             }catch(NumberFormatException nfe){
-                domainSizeText.setText("");
+                domainSizeText.setHintText("");
                 msArea.writeln("Not a number: " + nfe, true);
                 return;
             }
             
             msArea.writeln("Constraint \"--ensembles " +
-                    + values[Defs.Maximum_Solutions] + "\" added", true);
+                    + values[Defs.SOLUTIONS] + "\" added", true);
         }
         
         
         private void addTSEvent(){
             
-            bool[Defs.Timeout_Search] = true;
+            bool[Defs.TIMEOUT_SEARCH] = true;
             
             String ts;
             
@@ -861,21 +841,21 @@ public class ConstraintPanel extends JFrame implements Runnable{
                     msArea.writeln("Please select proper Timeout Search value.");
                     return;
                 }
-                values[Defs.Timeout_Search] = Integer.parseInt(ts);
+                values[Defs.TIMEOUT_SEARCH] = Integer.parseInt(ts);
             }catch(NumberFormatException nfe){
-                domainSizeText.setText("");
+                domainSizeText.setHintText("");
                 msArea.writeln("Not a number: " + nfe, true);
                 return;
             }
             
             msArea.writeln("Constraint \"--timeout-search " +
-                    + values[Defs.Timeout_Search] + "\" added", true);
+                    + values[Defs.TIMEOUT_SEARCH] + "\" added", true);
             
         }
         
         private void addTTEvent(){
             
-            bool[Defs.Timeout_Total] = true;
+            bool[Defs.TIMEOUT_TOTAL] = true;
             
             String tt;
             
@@ -888,15 +868,15 @@ public class ConstraintPanel extends JFrame implements Runnable{
                     msArea.writeln("Please select proper Timeout Total value.");
                     return;
                 }
-                values[Defs.Timeout_Total] = Integer.parseInt(tt);
+                values[Defs.TIMEOUT_TOTAL] = Integer.parseInt(tt);
             }catch(NumberFormatException nfe){
-                domainSizeText.setText("");
+                domainSizeText.setHintText("");
                 msArea.writeln("Not a number: " + nfe, true);
                 return;
             }
             
             msArea.writeln("Constraint \"--timeout-total " +
-                    + values[Defs.Timeout_Total] + "\" added", true);
+                    + values[Defs.TIMEOUT_TOTAL] + "\" added", true);
             
         }
         
@@ -946,17 +926,17 @@ public class ConstraintPanel extends JFrame implements Runnable{
                 seconddgeq = Integer.parseInt(aa2);
                 dgeq = Integer.parseInt(d);
             }catch(NumberFormatException nfe){
-                fdgeqText.setText("");
-                sdgeqText.setText("");
-                dgeqText.setText("");
+                fdgeqText.setHintText("");
+                sdgeqText.setHintText("");
+                dgeqText.setHintText("");
                 msArea.writeln("Not a number: " + nfe, true);
                 return;
             }
             
             if(firstdgeq >= seconddgeq){
-               fdgeqText.setText("");
-               sdgeqText.setText("");
-               dgeqText.setText("");
+               fdgeqText.setHintText("");
+               sdgeqText.setHintText("");
+               dgeqText.setHintText("");
                msArea.writeln("Please, select proper DGEQ values", true);
                return;
             }
@@ -969,9 +949,9 @@ public class ConstraintPanel extends JFrame implements Runnable{
                     + firstdgeq + " " + seconddgeq + " "
                     + dgeq + "\" added", true);
             
-            fdgeqText.setText("");
-            sdgeqText.setText("");
-            dgeqText.setText("");
+            fdgeqText.setHintText("");
+            sdgeqText.setHintText("");
+            dgeqText.setHintText("");
             
         }
         
@@ -993,17 +973,17 @@ public class ConstraintPanel extends JFrame implements Runnable{
                 seconddleq = Integer.parseInt(aa2);
                 dleq = Integer.parseInt(d);
             }catch(NumberFormatException nfe){
-                fdleqText.setText("");
-                sdleqText.setText("");
-                dleqText.setText("");
+                fdleqText.setHintText("");
+                sdleqText.setHintText("");
+                dleqText.setHintText("");
                 msArea.writeln("Not a number: " + nfe, true);
                 return;
             }
             
             if(firstdleq >= seconddleq){
-               fdleqText.setText("");
-               sdleqText.setText("");
-               dleqText.setText("");
+               fdleqText.setHintText("");
+               sdleqText.setHintText("");
+               dleqText.setHintText("");
                msArea.writeln("Please, select proper values", true);
                return; 
             }
@@ -1016,15 +996,15 @@ public class ConstraintPanel extends JFrame implements Runnable{
                     + firstdleq + " " + seconddleq + " "
                     + dleq + "\" added", true);
             
-            fdleqText.setText("");
-            sdleqText.setText("");
-            dleqText.setText("");
+            fdleqText.setHintText("");
+            sdleqText.setHintText("");
+            dleqText.setHintText("");
             
         }
         
         private void addUniformEvent(){
             
-            bool[Defs.Uniform] = true;
+            bool[Defs.UNIFORM] = true;
             
             String uniString;
             String voxel;
@@ -1039,8 +1019,8 @@ public class ConstraintPanel extends JFrame implements Runnable{
                     uniList.add(Double.parseDouble(st.nextToken()));
                 }
             }catch(NumberFormatException nfe){
-                uniText.setText("");
-                uniVoxText.setText("");
+                uniText.setHintText("");
+                uniVoxText.setHintText("");
                 msArea.writeln("Not a number: " + nfe, true);
                 return;
             }
@@ -1051,8 +1031,8 @@ public class ConstraintPanel extends JFrame implements Runnable{
             try{
                 uniList.add(Double.parseDouble(voxel));
             }catch(NumberFormatException nfe){
-                uniText.setText("");
-                uniVoxText.setText("");
+                uniText.setHintText("");
+                uniVoxText.setHintText("");
                 msArea.writeln("Not a number: " + nfe, true);
                 return;
             }
@@ -1061,14 +1041,14 @@ public class ConstraintPanel extends JFrame implements Runnable{
                     + uniString + " : voxel-side= "
                     + voxel + "\" added", true);
             
-            uniText.setText("");
-            uniVoxText.setText("");
+            uniText.setHintText("");
+            uniVoxText.setHintText("");
             
         }
         
         public void addEllEvent(){
             
-            bool[Defs.Ellipsoid] = true;
+            bool[Defs.ELLIPSOID] = true;
             
             String ellString;
             String x1,y1,z1,x2,y2,z2;
@@ -1090,8 +1070,8 @@ public class ConstraintPanel extends JFrame implements Runnable{
                     ellList.add(Double.parseDouble(st.nextToken()));
                 }
             }catch(NumberFormatException nfe){
-                uniText.setText("");
-                uniVoxText.setText("");
+                uniText.setHintText("");
+                uniVoxText.setHintText("");
                 msArea.writeln("Not a number: " + nfe, true);
                 return;
             }
@@ -1107,14 +1087,14 @@ public class ConstraintPanel extends JFrame implements Runnable{
                 ellList.add(Double.parseDouble(z2));                
                 ellList.add(Double.parseDouble(sumRadii));
             }catch(NumberFormatException nfe){
-                ellText.setText("");
-                x1Text.setText("");
-                y1Text.setText("");
-                z1Text.setText("");
-                x2Text.setText("");
-                y2Text.setText("");
-                z2Text.setText("");
-                sumRadiiText.setText("");
+                ellText.setHintText("");
+                x1Text.setHintText("");
+                y1Text.setHintText("");
+                z1Text.setHintText("");
+                x2Text.setHintText("");
+                y2Text.setHintText("");
+                z2Text.setHintText("");
+                sumRadiiText.setHintText("");
                 msArea.writeln("Not a number: " + nfe, true);
                 return;
             }
@@ -1125,14 +1105,14 @@ public class ConstraintPanel extends JFrame implements Runnable{
                     + x2 + " " + y2 + " " + z2 + " f2= "
                     + " sum-radii " + sumRadii + "\" added", true);
             
-            ellText.setText("");
-            x1Text.setText("");
-            y1Text.setText("");
-            z1Text.setText("");
-            x2Text.setText("");
-            y2Text.setText("");
-            z2Text.setText("");
-            sumRadiiText.setText("");
+            ellText.setHintText("");
+            x1Text.setHintText("");
+            y1Text.setHintText("");
+            z1Text.setHintText("");
+            x2Text.setHintText("");
+            y2Text.setHintText("");
+            z2Text.setHintText("");
+            sumRadiiText.setHintText("");
         
         }
         

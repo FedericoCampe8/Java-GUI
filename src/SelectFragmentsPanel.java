@@ -49,8 +49,6 @@ public class SelectFragmentsPanel extends JFrame implements Runnable{
         inPanel = new JPanel();
         
         /* Setup layout */
-        setLocation((int)(view.getX() + (int)(view.getWidth()/2)),
-                    (int)(view.getY() + (int)(view.getHeight()/2)));
         setPreferredSize(new Dimension((int)widthFrame, (int)heighFrame));
         setResizable(true);
         
@@ -58,11 +56,9 @@ public class SelectFragmentsPanel extends JFrame implements Runnable{
         
         /* Upper Panel*/
         
-        tp = new TargetPanel(view, false);
+        tp = new TargetPanel();
         
         Sequence seq = view.getModel().getTargetSequence();
-        
-        
         
         /* Set the sequence of the loaded protein*/
         Chain chain = structure.getChain(0);
@@ -73,8 +69,6 @@ public class SelectFragmentsPanel extends JFrame implements Runnable{
             view.printStringLn("Error in SelectFragments Panel: " + e);
             return;
         }
-        
-        System.out.print("sono a 0");
         
         /* Check the offset of the loaded protein (i.e., the first AA position) */
         List groups = chain.getAtomGroups("amino");
@@ -89,15 +83,13 @@ public class SelectFragmentsPanel extends JFrame implements Runnable{
             view.printStringLn("Error in calculating the offset of the protein");
             return;
         }
-        System.out.print("sono a 1");
         
         /* Internal panel */
         setFragmentPanel = new SetFragmentPanel(ctr, firstPosition, lastPosition);
-        
-        System.out.print("sono a 2");
+
         
         /* Lower Panel */
-        msArea = new MessageArea(4, 10);
+        msArea = new MessageArea(3, 10);
         
         /* Add the scroll bar and set auto-scroll */
         scroll = new JScrollPane(msArea);
@@ -121,6 +113,7 @@ public class SelectFragmentsPanel extends JFrame implements Runnable{
     @Override
     public void run() {
         pack();
+        setLocationRelativeTo(null);
         Container ct = getContentPane();
         ct.add(inPanel);
         setVisible(true);

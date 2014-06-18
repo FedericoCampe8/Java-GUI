@@ -288,7 +288,8 @@ public class ProteinModel extends Observable{
     
     /* Set the protein sequence string */
     private String setProteinString(){
-        return currentStructure.getChain(0).getSeqResSequence();
+        //return currentStructure.getChain(0).getSeqResSequence();
+        return HeaderPdb.getTargetSequence();
     }//setProteinString
     
     /* Get the current protein sequence */

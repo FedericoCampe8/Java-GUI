@@ -78,7 +78,7 @@ public class Jafatt {
                         ctr.usePickedInfo(outParsed);
                     else if(outParsed[0].equals("MEASURE")){
                         //ctr.setMeasure(outParsed);
-                        ctr.printStringLn(outParsed[0]);
+                        //ctr.printStringLn(outParsed[0]);
                     }else{
                         print("\n");
                        // ctr.printString(outParsed[1]);

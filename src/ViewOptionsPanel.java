@@ -9,35 +9,43 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.ButtonGroup;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.BorderFactory;
 
 public class ViewOptionsPanel extends JFrame implements Runnable{
     
     private UserFrame view;
     private Controller ctr;
     private ViewPanel viewPanel;
+    private int panel;
     
     private JPanel inPanel;
     private String title;
     
-    public ViewOptionsPanel(UserFrame view){
+    public ViewOptionsPanel(UserFrame view, int panel){
         super("View Options Panel");
-        setup(view);
+        setup(view, panel);
     }
     
     /* Setup */
-    private void setup(UserFrame view){
+    private void setup(UserFrame view, int panel){
         Toolkit t = Toolkit.getDefaultToolkit();
         Dimension screensize = t.getScreenSize();
-        double widthFrame = (screensize.getWidth() * 20.0) / 100.0;
+        double widthFrame = (screensize.getWidth() * 25.0) / 100.0;
         double heighFrame = (screensize.getHeight() * 45.0) / 100.0;
         
         this.view = view;
+        this.panel = panel;
         ctr = view.getController();
         inPanel = new JPanel();
-        title = "Select a view for the proten:";
+        title = "Select a view for the proten ";
+        if(panel == Defs.EXTRACTION)
+            title += "in the Extraction Panel";
+        if(panel == Defs.ASSEMBLING)
+            title += "in the Assembling Panel";
+        if(panel == Defs.OUTPUT)
+            title += "in the Output Panel";        
         
         /* Setup layout */
         setLocation((int)(view.getX() + (int)(view.getWidth()/2)),
@@ -46,18 +54,20 @@ public class ViewOptionsPanel extends JFrame implements Runnable{
         setResizable(true);
         
         inPanel.setLayout(new BorderLayout());
+        inPanel.setBorder(BorderFactory.createTitledBorder(title));
         
         /* Internal panel */
         viewPanel = new ViewPanel(ctr);
         
         /* Add panels */
-        inPanel.add(new JLabel(title), BorderLayout.NORTH);
+        //inPanel.add(new JLabel(title), BorderLayout.NORTH);
         inPanel.add(viewPanel, BorderLayout.CENTER); 
     }//setup
 
     @Override
     public void run() {
         pack();
+        setLocationRelativeTo(null);
         Container ct = getContentPane();
         ct.add(inPanel);
         setVisible(true);
@@ -164,8 +174,10 @@ public class ViewOptionsPanel extends JFrame implements Runnable{
         @Override
         public void actionPerformed(ActionEvent ae){
             
-            /* Set views */
-            ctr.setViewOptions(ae.getActionCommand());
+            String switchViewString;
+            switchViewString = Utilities.switchViewString(ae.getActionCommand());
+            ((MolPanel) view.getPanel(panel)).switchView(switchViewString);
+            
         }
     }//ViewPanel
     

@@ -1,7 +1,5 @@
 package jafatt;
 
-import java.awt.event.ActionEvent;
-import javax.swing.JOptionPane;
 import org.biojava.bio.structure.Chain;
 import org.biojava.bio.structure.Structure;
 import javax.swing.JOptionPane;
@@ -15,10 +13,10 @@ import java.io.*;
 public class ExtractionOpPanel extends OpPanel{
     
     /* Buttons on the panel */
-    private OpButton viewButton;
+    //private OpButton viewButton;
     private OpButton selectButton;
     private OpButton sendButton;
-    private OpButton subSequenceButton;
+    //private OpButton subSequenceButton;
     
     /* Items */
     private UserFrame view;
@@ -26,6 +24,7 @@ public class ExtractionOpPanel extends OpPanel{
     private String structureSequence;
     
     public ExtractionOpPanel(UserFrame view){
+        super(false);
         initComponents(view);
     }
     
@@ -36,56 +35,65 @@ public class ExtractionOpPanel extends OpPanel{
         this.view = view;
         structureSequence = "";
         
+        /*
         viewButton = new OpButton("View", "Setting for the protein's view"){
             @Override
             public void buttonEvent(ActionEvent evt){
                 viewEvent();
             }
         };
+         * 
+         */
         selectButton = new OpButton("Select", "Select fragments by offset"){
             @Override
             public void buttonEvent(ActionEvent evt){
                 selectEvent();
             }
         };
-        sendButton = new OpButton("Assign", "Transfer fragments to Assembling panel"){
+        sendButton = new OpButton("Assemble", "Transfer fragments to Assembling panel"){
             @Override
             public void buttonEvent(ActionEvent evt){
                 transferEvent();
             }
         };
+        /*
         subSequenceButton = new OpButton("Subseq", "Get the common subsequence between protein and target"){
             @Override
             public void buttonEvent(ActionEvent evt){
                 subSequenceEvent();
             }
         };
+         * 
+         */
         
         /* Add buttons */
-        topA.add(viewButton);
-        topA.add(selectButton);
+        //main.add(viewButton);
+        main.add(selectButton);
         //topA.add(subSequenceButton);
-        topA.add(sendButton);
+        main.add(sendButton);
     }//initComponents
     
-    /* Load a known protein */
+    /* 
+     * Load a known protein 
     private void viewEvent(){
         if(structureSequence.equals("")){
             view.printStringLn("Load a protein first!");
             return;
         }
         
-        /* Open a new ViewOptions panel with a new thread */
+        /* Open a new ViewOptions panel with a new thread 
         Thread threadViewOptions;
         ViewOptionsPanel vop = new ViewOptionsPanel(view);
         
-        /* Create the thread */
+        /* Create the thread
         threadViewOptions = new Thread(vop);
         threadViewOptions.start();
         
-        /* Print infos */
+        /* Print infos
         view.printStringLn("Open ViewOptions panel");
     }//loadEvent
+     * 
+     */
     
     /* Select the fragments by their offset */
     private void selectEvent(){
@@ -158,14 +166,20 @@ public class ExtractionOpPanel extends OpPanel{
            if (result == JOptionPane.CANCEL_OPTION) {
                return;
            }else{
+
                view.clearAssemblingPanel();
-               //((TargetPanel)view.getPanel(Defs.TARGET)).updatePanel();
+
+               //((TargetPanel)view.getPanel(Defs.TARGET)).reset();
+               //((TargetPanel)view.getPanel(Defs.TARGET)).setOffsetString("",0);
+               
+
            }
 
         }
         //Delete any in.pdb file existing
         try{
-            FileOutputStream inpdb = new FileOutputStream(Defs.path_prot +view.getModel().idProteinCode+".in.pdb");
+            FileOutputStream inpdb = new FileOutputStream(Defs.PROTEINS_PATH +
+                    view.getModel().idProteinCode+".in.pdb");
             inpdb.close();
          }catch (IOException e) {
            view.printStringLn("Error: " + e);
@@ -252,7 +266,7 @@ public class ExtractionOpPanel extends OpPanel{
         ((AssemblingPanel)view.getPanel(Defs.ASSEMBLING)).executeCmd("select 0;");
         
         //view.preparePanel(Defs.ASSEMBLING);
-        view.clearExtractionPanel();
+        //view.clearExtractionPanel();
     }//sendEvent
     
     private class ConfirmPanel extends JPanel{

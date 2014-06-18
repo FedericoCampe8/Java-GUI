@@ -72,6 +72,8 @@ public class Defs {
     public static final String EMPTY = "0";
     public static final int FRAGMENT_NUM_PARAMETERS = 12;
     
+    /***********************************************************/
+    
     public static final int FRAGMENT_PROTEIN_ID = 0;
     public static final int FRAGMENT_PROTEIN_NUM = 1;
     public static final int FRAGMENT_NUM = 2;
@@ -85,16 +87,20 @@ public class Defs {
     public static final int FRAGMENT_OFFSET = 10;
     public static final int FRAGMENT_TIME_OF_CREATION = 11;
     
-    public static final int Domain_Size = 0;
-    public static final int Maximum_Solutions = 1;
-    public static final int Timeout_Search = 2;
-    public static final int Timeout_Total = 3;
+    /***********************************************************/
+    
+    public static final int DOMAIN = 0;
+    public static final int SOLUTIONS = 1;
+    public static final int TIMEOUT_SEARCH = 2;
+    public static final int TIMEOUT_TOTAL = 3;
     public static final int JM = 4;
     public static final int USS = 5;
     public static final int DGEQ = 6;
     public static final int DLEQ = 7;
-    public static final int Uniform = 8;
-    public static final int Ellipsoid = 9;
+    public static final int UNIFORM = 8;
+    public static final int ELLIPSOID = 9;
+    
+    /***********************************************************/
     
     public static final int MONTECARLO_SAMPLING = 0;
     public static final int GIBBS_SAMPLING = 1;
@@ -103,18 +109,35 @@ public class Defs {
     public static final int VERBOSE_OPTION = 4;
     public static final int GIBBS_OPTION = 5;
     public static final int CGC_OPTION = 6;
+    public static final int PDB_FILE = 7;
     
-    public static final String path_scrpt = System.getProperty("user.dir") 
+    /***********************************************************/
+    
+    public static final String SOLVER_PATH = System.getProperty("user.dir") 
                 + Utilities.getSeparator()
-                + "solver";
+                + "Solver";
     
-    public static final String path_script = path_scrpt
+    public static final String TEMP = SOLVER_PATH
+                + Utilities.getSeparator()
+                + "temp"
                 + Utilities.getSeparator();
     
-    public static final String path_prot = path_script
+    public static final String FIASCO_PATH = SOLVER_PATH
+                + Utilities.getSeparator()
+                + "Fiasco"
+                + Utilities.getSeparator();
+    
+    public static final String COCOS_PATH = SOLVER_PATH
+                + Utilities.getSeparator()
+                + "Cocos"
+                + Utilities.getSeparator();
+    
+    public static final String PROTEINS_PATH = SOLVER_PATH
+                + Utilities.getSeparator()
                 + "proteins"
                 + Utilities.getSeparator();
-    public static final String path_cocos = Defs.path_script + "cocos";
+    
+    /***********************************************************/
     
     public static final String tab1 = "    ";
     public static final String tab2 = "       	              ";

@@ -14,7 +14,6 @@ import org.biojava.bio.structure.StructureImpl;
 import org.jmol.api.JmolAdapter;
 import org.jmol.api.JmolViewer;
 import org.jmol.popup.JmolPopup;
-import org.jmol.modelkit.ModelKitPopup;
 
 public class StructureViewPanel extends JPanel{
     
@@ -100,9 +99,8 @@ public class StructureViewPanel extends JPanel{
         int modelNumber = Integer.parseInt(
                 (String)viewer.getProperty("string","modelInfo.modelCount",null)
                 );
-        return modelNumber;
-        
-    }
+        return modelNumber;   
+    }    
     
     public int getDisplayedModel(){
         
@@ -113,8 +111,36 @@ public class StructureViewPanel extends JPanel{
         
     }
     
-    public int getDistance(){
-        return 1;
+    public String getAxesCoordinates(){
+        
+        String origin = (String)viewer.getProperty("string","centerInfo[0]",null);
+        return origin;
+        
+    }
+    
+    public String getMeasurements(){
+        int i = 1;
+        String model;
+        String cms = "";
+        model = ((String)viewer.getProperty("string","measurementInfo["+i+"]",null));
+        
+        while(!model.equals("")){
+            String aa1 = "measurementinfo["+i+"].atoms[0].info";
+            model = ((String)viewer.getProperty("string",aa1,null));
+            String resno1 = model.split("(?<=\\D)(?=\\d)|(?<=\\d)(?=\\D)")[1];
+            String aa2 = "measurementinfo["+i+"].atoms[1].info";
+            model = ((String)viewer.getProperty("string",aa2,null));
+            String resno2 = model.split("(?<=\\D)(?=\\d)|(?<=\\d)(?=\\D)")[1];
+            String distance = ((String)viewer.getProperty("string","measurementinfo["+i+"].value",null));
+            /* Debug
+            System.out.println(resno1 + " " + resno2 + " " + distance);
+             */
+            i++;
+            model = ((String)viewer.getProperty("string","measurementInfo["+i+"]",null));
+            cms = cms + Defs.tab1 + "--distance-geq " + resno1 +" "+ resno2 + " " + distance + " \\\n";
+        }
+        //String[] measures = viewer.getProperty(str"measurementinfo");
+        return cms;
     }
     
     /* Set the structure to be displayed */
@@ -141,7 +167,8 @@ public class StructureViewPanel extends JPanel{
             System.out.println("viewer is executing");
         /* Wait for the comnplete execution of I/O commands */
         if ((cmd.startsWith("write")) || (cmd.startsWith("load")) || 
-                (cmd.startsWith("load append"))){
+                (cmd.startsWith("load append")) || (cmd.startsWith("undo")) ||
+                (cmd.startsWith("redo")) || (cmd.startsWith("model"))){
             
             /* Just an alias for evalString */
             script = viewer.scriptWait(cmd);
@@ -165,7 +192,11 @@ public class StructureViewPanel extends JPanel{
     public void paint(Graphics g) {
         getSize(currentSize);
         g.getClipBounds(rectClip);
-        viewer.renderScreenImage(g, currentSize, rectClip); 
+        try{
+            viewer.renderScreenImage(g, currentSize, rectClip); 
+        }catch (NullPointerException npe){
+            System.out.println("JMolViewer Rendering Error, catched!");
+        }
     }//paint
     
     /* Set the Controller instance */

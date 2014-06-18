@@ -7,7 +7,6 @@ public class AssemblingPanel extends MolPanel{
     
     private AssemblingOpPanel asOP;
     private UserFrame view;
-    boolean expanded;
     
     public AssemblingPanel(UserFrame view, String str){
         super(str);
@@ -27,6 +26,18 @@ public class AssemblingPanel extends MolPanel{
         asOP.setProtein(structure);
 
     }//setProtein
+    
+    @Override
+    public void switchView(String newView){
+        
+        /* Change the view */
+        molViewPanel.executeCmd(newView);
+        
+    }//switchView
+    
+    public void runFiasco(){
+        asOP.solveEvent();
+    }
     
     public void loadOutput(){
         asOP.outputEvent();

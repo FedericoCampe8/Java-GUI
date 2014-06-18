@@ -2,22 +2,22 @@ package jafatt;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.awt.BorderLayout;
 import java.awt.GridLayout;
+import java.awt.GridBagConstraints;
 import java.awt.Dimension;
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.util.List;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JOptionPane;
 import javax.swing.ImageIcon;
-//import org.jmol.api.JmolViewer;
-//import org.jmol.api.JmolAdapter;
+import javax.swing.BorderFactory;
 import org.biojava.bio.structure.Chain;
 import org.biojava.bio.structure.Structure;
 import org.biojava.bio.structure.AminoAcid;
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.awt.event.WindowListener;
+
 
 public class AssemblingOpPanel extends OpPanel{
     
@@ -30,6 +30,7 @@ public class AssemblingOpPanel extends OpPanel{
     private OpButton redoButton;
     private OpButton saveButton;
     private OpButton rulerButton;
+    private OpButton expandButton;
     
     /* Items */
     private UserFrame view;
@@ -46,7 +47,6 @@ public class AssemblingOpPanel extends OpPanel{
     private ArrayList<Double> ellList;
     private ArrayList<String> choice;
     private ConstraintPanel cp;
-    private boolean cpBool, solverBool;
     private int[] values;
     private int firstPosition;
     private Chain chain;
@@ -67,6 +67,11 @@ public class AssemblingOpPanel extends OpPanel{
     private String saveString = currentDir + imSuffix + "save.png";
     private String rulerOnString = currentDir + imSuffix + "rulerON.png";
     private String rulerOffString = currentDir + imSuffix + "rulerOFF.png";
+    private String expandImage = currentDir + imSuffix + "expandWhite.png";
+    private String reduceImage = currentDir + imSuffix + "reduceWhite.png";
+    
+    ImageIcon iconExpand = new ImageIcon(expandImage);
+    ImageIcon iconReduce = new ImageIcon(reduceImage);
     
     ImageIcon moveOn = new ImageIcon(moveOnString);
     ImageIcon moveOff = new ImageIcon(moveOffString);
@@ -82,8 +87,14 @@ public class AssemblingOpPanel extends OpPanel{
     ImageIcon rulerOn = new ImageIcon(rulerOnString);
     ImageIcon rulerOff = new ImageIcon(rulerOffString);
     
+    private boolean expanded = false;   
+    
+    double widthPanel = this.getWidth();
+    double heightPanel = this.getHeight();  //540
+
     
     public AssemblingOpPanel(UserFrame view){
+        super(true);
         initComponents(view);
     }
     
@@ -93,19 +104,26 @@ public class AssemblingOpPanel extends OpPanel{
         this.view = view;
         structureSequence = "";
         
+        /*
+    
         constraintsButton = new OpButton("Constraints", "Set the Constraints to the model") {
             @Override
             public void buttonEvent(ActionEvent evt){
                 constraintEvent();
             }
         };
+         
+         */
+        
 
         solveButton = new OpButton("Solve", "Run Fiasco!") {
             @Override
             public void buttonEvent(ActionEvent evt){
-                solveEvent();
+                //solveEvent();
+                constraintEvent();
             }
         };
+         
         
         move = new OpButton(moveOff, "Move Selected Fragment") {
             @Override
@@ -156,18 +174,67 @@ public class AssemblingOpPanel extends OpPanel{
         };
         rulerButton.setPreferredSize(new Dimension(30, 30));
         
+        expandButton = new OpButton(iconExpand, "Show more options") {
+
+            @Override
+            public void buttonEvent(ActionEvent evt) {
+                expandEvent();
+            }
+        };
+        expandButton.setPreferredSize(new Dimension(140, 6));
+        expandButton.setBackground(Color.BLACK);
+        expandButton.setFocusPainted(false);
+        expandButton.setBorderPainted(false);
+        expandButton.setContentAreaFilled(false);
+        
+        //super.setLayout(new GridLayout(2,1));
+        expand.add(expandButton, BorderLayout.CENTER);
          //Add buttons
-        topA.add(constraintsButton);
-        topA.add(solveButton);
-        topB.add(rotate);
-        topB.add(move);
-        topB.add(undoButton);
-        topB.add(redoButton);
-        //topB.add(saveButton);
-        topB.add(rulerButton);
+        //main.add(constraintsButton);
+        main.add(solveButton);
+        tool.add(rotate);
+        tool.add(move);
+        tool.add(undoButton);
+        tool.add(redoButton);
+        tool.add(rulerButton);
+        tool.setBorder(BorderFactory.createTitledBorder("Tool Box"));
+        
         
     }//initComponents
-       
+    
+    
+    private void expandEvent(){
+        if(expanded){
+            expanded = false;
+            expandButton.setIcon(iconExpand);
+            reducePanel();
+        }else{
+            expanded = true;
+            expandButton.setIcon(iconReduce);
+            expandPanel();
+        }
+    }
+    
+    private void expandPanel(){
+        c.fill = GridBagConstraints.VERTICAL;
+        c.gridx = 0; c.gridy = 0;
+        add(expand,c);
+        c.gridy = 1;
+        add(tool,c);
+        c.gridy = 2;
+        add(main,c);
+        getRootPane().revalidate();
+    }
+    
+    private void reducePanel(){
+        remove(tool);
+        c.fill = GridBagConstraints.VERTICAL;
+        c.gridx = 0; c.gridy = 0;
+        add(expand,c);
+        c.gridy = 1;
+        add(main,c);
+        getRootPane().revalidate();
+    }
     
     private void moveEvent(){        
         
@@ -228,7 +295,8 @@ public class AssemblingOpPanel extends OpPanel{
             view.printStringLn("Transfer fragments first!");
             return;
         }
-        view.move(true);
+        
+        move(true);
                
     }
     
@@ -243,7 +311,22 @@ public class AssemblingOpPanel extends OpPanel{
             view.printStringLn("Transfer fragments first!");
             return;
         }        
-        view.move(false);        
+        move(false);        
+    }
+    
+    public void move(Boolean isUndo){
+        
+        view.upView.execute(Utilities.deleteConnectionString(
+                        model.getDimensionFragmentsA()),
+                        Defs.ASSEMBLING);
+        if(isUndo){
+            view.upView.execute("undoMove 1; ", Defs.ASSEMBLING);
+        }else{
+            view.upView.execute("redoMove 1; ", Defs.ASSEMBLING);
+        }
+        
+        view.upView.connectFragments(false);
+        
     }
     
     private void saveCacheEvent(){
@@ -259,15 +342,15 @@ public class AssemblingOpPanel extends OpPanel{
         }
         //to do
         ((AssemblingPanel)view.getPanel(Defs.ASSEMBLING)).executeCmd("select * ;");
-        //((AssemblingPanel)view.getPanel(Defs.ASSEMBLING)).executeCmd("write pdb \""  + Defs.path_prot+model.idProteinCode+ ".in.pdb" + "\"; ");
-        ((AssemblingPanel)view.getPanel(Defs.ASSEMBLING)).executeCmd("write pdb \"" + "cache.pdb" + "\"; ");
+        ((AssemblingPanel)view.getPanel(Defs.ASSEMBLING)).executeCmd("write pdb \"" 
+                + Defs.TEMP + "cache.pdb" + "\"; ");
         
         view.cacheToPdb();
                 
     }
     
     private void distanceEvent(){
-        
+
         if(structureSequence.equals("")){
             view.printStringLn("Load a protein first!");
             return;
@@ -277,40 +360,61 @@ public class AssemblingOpPanel extends OpPanel{
             view.printStringLn("Transfer fragments first!");
             return;
         }
+
+        /*
+        String origin = ((AssemblingPanel) view.getPanel(Defs.ASSEMBLING)).molViewPanel.getAxesCoordinates();
+        origin = origin.replaceAll("[()]", "");
+        */
         
-        ((AssemblingPanel) view.getPanel(Defs.ASSEMBLING)).executeCmd(
-                    "set showMeasurements TRUE; measure ON;");
+        ArrayList<Fragment> frgsSelected = (ArrayList<Fragment>)view.getModel().getAllSelectedFragmentsA().clone();
+        int size = frgsSelected.size();
         
         if(ruleOn){
-            rulerButton.setIcon(rulerOff);
-            ruleOn = false;
-            ((AssemblingPanel) view.getPanel(Defs.ASSEMBLING)).executeCmd(
-                    "measure DELETE;");
+            
+            if((frgsSelected.size() == size) ||
+                    (frgsSelected.isEmpty()) ||
+                    (size == 0)) {
+                rulerButton.setIcon(rulerOff);
+                ruleOn = false;
+                deleteMeasures();
+            }else{
+                deleteMeasures();
+                measure(frgsSelected);
+                
+            }
         }else{
-            ArrayList<Fragment> frgsSelected = view.getModel().getAllSelectedFragmentsA();
+            
             if(frgsSelected.size()< 2){
-                //view.printStringLn("Select two or more fragments first!");
+                view.printStringLn("Select two or more fragments!");
                 return;
             }
-            for (int i = 0; i < frgsSelected.size(); i++) {
-                String startFirstAA = frgsSelected.get(i).getParameters()[Defs.FRAGMENT_START_AA];
-                String endFirstAA = frgsSelected.get(i).getParameters()[Defs.FRAGMENT_END_AA];
-                for (int j = 0; j < frgsSelected.size(); j++) {
-                    if (j != i) {
-                        String startSecondAA = frgsSelected.get(j).getParameters()[Defs.FRAGMENT_START_AA];
-                        String endSecondAA = frgsSelected.get(j).getParameters()[Defs.FRAGMENT_END_AA];
-                        ((AssemblingPanel) view.getPanel(Defs.ASSEMBLING)).executeCmd(
-                                "measure (resno=" + startFirstAA + ") (resno=" + endSecondAA + "); ");
-                        ((AssemblingPanel) view.getPanel(Defs.ASSEMBLING)).executeCmd(
-                                "measure (resno=" + endFirstAA + ") (resno=" + startSecondAA + "); ");
-                        System.out.println("measure (" + endFirstAA + ") (" + startSecondAA + "); ");
-
-                    }
-                }
-            }
+            size = frgsSelected.size();
+            measure(frgsSelected);                    
             rulerButton.setIcon(rulerOn);
             ruleOn = true;
         }
+    }
+    
+    private void measure(ArrayList<Fragment> frgs){
+        
+        for (int i = 0; i < frgs.size(); i++) {
+                String startFirstAA = frgs.get(i).getParameters()[Defs.FRAGMENT_START_ATOM];
+                String endFirstAA = frgs.get(i).getParameters()[Defs.FRAGMENT_END_ATOM];
+                frgs.remove(i);
+                for (int j = 0; j < frgs.size(); j++) {
+                    String startSecondAA = frgs.get(j).getParameters()[Defs.FRAGMENT_START_ATOM];
+                    String endSecondAA = frgs.get(j).getParameters()[Defs.FRAGMENT_END_ATOM];
+                    ((AssemblingPanel) view.getPanel(Defs.ASSEMBLING)).executeCmd(
+                            "monitor (atomno=" + startFirstAA + ") (atomno=" + endSecondAA + "); " + 
+                            "monitor (atomno=" + endFirstAA + ") (atomno=" + startSecondAA + "); ");
+                }
+            }     
+        
+    }
+    
+    private void deleteMeasures(){
+        ((AssemblingPanel) view.getPanel(Defs.ASSEMBLING)).executeCmd(
+                        "measure DELETE;");
     }
     
     private void saveEvent(){
@@ -325,129 +429,125 @@ public class AssemblingOpPanel extends OpPanel{
         firstPosition = Utilities.getAAPosition(firstAA);
         
         
-        String cms = "BASEDIR=" + Defs.path_scrpt + "\n\n$BASEDIR/fiasco \\\n"
-                     +  Defs.tab1 + "--input proteins/"+proteinId+".in.fiasco \\\n"
-                     +  Defs.tab1 + "--outfile proteins/"+proteinId+".out.pdb \\\n";
-                
-        if (cpBool){
+        String cms = "BASEDIR=" + Defs.SOLVER_PATH + "\n\n$BASEDIR/Fiasco/fiasco \\\n"
+                     +  Defs.tab1 + "--input ../proteins/"+proteinId+".in.fiasco \\\n"
+                     +  Defs.tab1 + "--outfile ../proteins/"+proteinId+".out.pdb \\\n";
             
-            bool = cp.getFilled();
-            values = cp.getValues();
-        
-            if ((bool[Defs.Domain_Size]) && (values[Defs.Domain_Size] != -1)) {
-                
-                cms = cms + Defs.tab1 + "--domain-size " + values[Defs.Domain_Size] + " \\\n";
+        bool = cp.getFilled();
+        values = cp.getValues();
+
+        if ((bool[Defs.DOMAIN]) && (values[Defs.DOMAIN] != -1)) {
+            cms = cms + Defs.tab1 + "--domain-size " + values[Defs.DOMAIN] + " \\\n";
+        }
+
+        if ((bool[Defs.SOLUTIONS]) && (values[Defs.SOLUTIONS] != -1)) {
+            cms = cms + Defs.tab1 + "--ensembles " + values[Defs.SOLUTIONS] + " \\\n";
+        }
+
+        if ((bool[Defs.TIMEOUT_SEARCH]) && (values[Defs.TIMEOUT_SEARCH] != -1)) {
+            cms = cms + Defs.tab1 + "--timeout-search " + values[Defs.TIMEOUT_SEARCH] + " \\\n";
+        }
+
+        if ((bool[Defs.TIMEOUT_TOTAL]) && (values[Defs.TIMEOUT_TOTAL] != -1)) {
+            cms = cms + Defs.tab1 + "--timeout-total " + values[Defs.TIMEOUT_TOTAL] + " \\\n";
+        }
+
+        if (bool[Defs.DGEQ]) {
+            dgeq = cp.getDGEQList();
+            int j = 0;
+
+            while (dgeq.size() > j) {
+                cms = cms + Defs.tab1 + "--distance-geq "
+                        + dgeq.get(j).intValue() + " "
+                        + dgeq.get(++j).intValue() + " "
+                        + dgeq.get(++j).intValue() + " \\\n";
+                j++;
+            }
+        }
+
+        if (bool[Defs.DLEQ]) {
+            dleq = cp.getDLEQList();
+            int j = 0;
+
+            while (dleq.size() > j) {
+                cms = cms + Defs.tab1 + "--distance-leq "
+                        + dleq.get(j).intValue() + " "
+                        + dleq.get(++j).intValue() + " "
+                        + dleq.get(++j).intValue() + " \\\n";
+                j++;
+            }
+        }
+
+        if (cp.measures()) {
+            String measurements = ((AssemblingPanel) view.getPanel(Defs.ASSEMBLING)).molViewPanel.getMeasurements();
+            cms = cms + measurements;
+        }
+
+
+        if (bool[Defs.UNIFORM]) {
+            int k = 0;
+            uniList = cp.getUniformList();
+
+            while (uniList.size() - 1 > k) {
+                cms = cms + Defs.tab1 + "--uniform ";
+                while (uniList.get(k) != -1.0) {
+                    cms = cms + uniList.get(k++).intValue() + " ";
+                }
+                cms = cms + ": voxel-side= " + uniList.get(++k) + " \\\n";
+                k++;
             }
 
-            if ((bool[Defs.Maximum_Solutions]) && (values[Defs.Maximum_Solutions] != -1)) {
-                
-                cms = cms + Defs.tab1 + "--ensembles " + values[Defs.Maximum_Solutions] + " \\\n";
+        }
+
+        if (bool[Defs.ELLIPSOID]) {
+            int k = 0;
+            ellList = cp.getEllList();
+
+            while (ellList.size() > k) {
+                cms = cms + Defs.tab1 + "--ellipsoid ";
+                while (ellList.get(k) != -1.0) {
+                    cms = cms + ellList.get(k++).intValue() + " ";
+                }
+                cms = cms + ": f1= " + ellList.get(++k) + " "
+                        + ellList.get(++k) + " " + ellList.get(++k) + " "
+                        + "f2= " + ellList.get(++k) + " "
+                        + ellList.get(++k) + " " + ellList.get(++k) + " "
+                        + "sum-radii= " + ellList.get(++k).intValue() + " \\\n";
+                k++;
             }
 
-            if ((bool[Defs.Timeout_Search]) && (values[Defs.Timeout_Search] != -1)) {
-                
-                cms = cms + Defs.tab1 + "--timeout-search " + values[Defs.Timeout_Search]  + " \\\n";
-            }
+        }
 
-            if ((bool[Defs.Timeout_Total]) && (values[Defs.Timeout_Total] != -1)) {
-                
-                cms = cms + Defs.tab1 + "--timeout-total " + values[Defs.Timeout_Total] + " \\\n";
-            }
-            
-            if(bool[Defs.DGEQ]){
-                dgeq = cp.getDGEQList();
-                int j = 0;            
-                
-                while (dgeq.size() > j){
-                    cms = cms + Defs.tab1 + "--distance-geq " 
-                            + dgeq.get(j).intValue() +" "
-                            + dgeq.get(++j).intValue() + " "
-                            + dgeq.get(++j).intValue() + " \\\n";
-                    j++;
-                }
-            }
-            
-            if(bool[Defs.DLEQ]){
-                dleq = cp.getDLEQList();
-                int j = 0;            
-                
-                while (dleq.size() > j){
-                    cms = cms + Defs.tab1 + "--distance-leq " 
-                            + dleq.get(j).intValue() +" "
-                            + dleq.get(++j).intValue() + " "
-                            + dleq.get(++j).intValue() + " \\\n";
-                    j++;
-                }
-            }
-            
-            if (bool[Defs.Uniform]){
-                
-                int k = 0;
-                uniList = cp.getUniformList();
-                
-                while (uniList.size()-1 > k){
-                    cms = cms + Defs.tab1 + "--uniform ";
-                    while (uniList.get(k) != -1.0) {
-                        cms = cms + uniList.get(k++).intValue() + " ";
-                    }
-                    cms = cms + ": voxel-side= " + uniList.get(++k) + " \\\n";
-                    k++;
-                }
-                
-            }
+        if (bool[Defs.JM]) {
+            jm = cp.getJmList();
+            sp = cp.getSpList();
+            choice = cp.getChoice();
+            int j = 0;
+            int k = 0;
 
-            if (bool[Defs.Ellipsoid]){
-                
-                int k = 0;
-                ellList = cp.getEllList();
-                
-                while (ellList.size() > k){
-                    cms = cms + Defs.tab1 + "--ellipsoid ";
-                    while (ellList.get(k) != -1.0) {
-                        cms = cms + ellList.get(k++).intValue() + " ";
-                    }
-                    cms = cms + ": f1= " + ellList.get(++k) + " "
-                            + ellList.get(++k) + " " + ellList.get(++k) + " "
-                            + "f2= " + ellList.get(++k) + " "
-                            + ellList.get(++k) + " " + ellList.get(++k) + " "
-                            + "sum-radii= " + ellList.get(++k).intValue() + " \\\n";
-                    k++;
-                }
-                
+            while (jm.size() > j) {
+                cms = cms + Defs.tab1 + "--jm " + (jm.get(j).intValue() - firstPosition)
+                        + " '" + choice.get(k) + "' " + (jm.get(++j).intValue() - firstPosition)
+                        + "  : numof-clusters= " + jm.get(++j).intValue() + " " + jm.get(++j).intValue()
+                        + " \\\n" + Defs.tab2 + " sim-params= " + sp.get(k).doubleValue() + " " + jm.get(++j).intValue() + " \\\n";
+                j++;
+                k++;
             }
-            
-            if (bool[Defs.JM]) {
-            
-                jm = cp.getJmList();
-                sp = cp.getSpList();
-                choice = cp.getChoice();
-                int j = 0;            
-                int k = 0;
-            
-                while (jm.size() > j){
-                    cms = cms + Defs.tab1 + "--jm " + (jm.get(j).intValue() - firstPosition + 1)  +
-                            " '" + choice.get(k) +"' " + (jm.get(++j).intValue() - firstPosition + 1) + 
-                            "  : numof-clusters= " + jm.get(++j).intValue() + " " + jm.get(++j).intValue() +
-                            " \\\n" + Defs.tab2 + " sim-params= " + sp.get(k).doubleValue() + " " + jm.get(++j).intValue() + " \\\n";
-                    j++;
-                    k++;
-                }
-            }
-        
-            if (bool[Defs.USS]){
-            
-                uss = cp.getUSSList();        
-                int j = 0;            
-                while (uss.size() > j){
-                    cms = cms + Defs.tab1 + "--unique-source-sinks " + uss.get(j).intValue() + " '->' " + uss.get(++j).intValue() + 
-                            "  : voxel-side= " + uss.get(++j).intValue() + " \\\n";
-                    j++;
-                }
+        }
+
+        if (bool[Defs.USS]) {
+
+            uss = cp.getUSSList();
+            int j = 0;
+            while (uss.size() > j) {
+                cms = cms + Defs.tab1 + "--unique-source-sinks " + uss.get(j).intValue() + " '->' " + uss.get(++j).intValue()
+                        + "  : voxel-side= " + uss.get(++j).intValue() + " \\\n";
+                j++;
             }
         }
         
         try{
-            FileOutputStream filesh = new FileOutputStream(Defs.path_script + "solve.sh");
+            FileOutputStream filesh = new FileOutputStream(Defs.FIASCO_PATH + "solve.sh");
             filesh.write(cms.getBytes());
             filesh.flush();
             filesh.close();
@@ -455,6 +555,11 @@ public class AssemblingOpPanel extends OpPanel{
         }catch (IOException e) {
             view.printStringLn("Error: " + e);
         }        
+        
+        String path = view.getController().getPath();
+        String protein = path.substring(path.lastIndexOf("/") + 1).split("\\.")[0];
+        if(!path.substring(path.lastIndexOf("/") + 1).split("\\.")[1].equals("pdb"))
+            protein += "." + path.substring(path.lastIndexOf("/") + 1).split("\\.")[1];
         
         String str = "% Database information\n"
                 /*
@@ -471,13 +576,13 @@ public class AssemblingOpPanel extends OpPanel{
                 + "CONTACT     config/contact.csv\n"
                 + "TORSPAR     config/table_corr.pot\n"
                 + "% Proteins Information\n"
-                + "TARGET_PROT proteins/"+proteinId+"\n"
-                + "KNOWN_PROT  proteins/"+proteinId+"\n"
-                + "CONSTRAINTS proteins/"+proteinId+".in.con\n"
-                + "FRAG_SEC_FL proteins/"+proteinId+".in.pdb";
+                + "TARGET_PROT ../proteins/"+protein+"\n"
+                + "KNOWN_PROT  ../proteins/"+protein+"\n"
+                + "CONSTRAINTS ../proteins/"+proteinId+".in.con\n"
+                + "FRAG_SEC_FL ../proteins/"+proteinId+".in.pdb";
         
          try{
-            FileOutputStream infiasco = new FileOutputStream(Defs.path_prot +proteinId+".in.fiasco");
+            FileOutputStream infiasco = new FileOutputStream(Defs.PROTEINS_PATH +proteinId+".in.fiasco");
             infiasco.write(str.getBytes());
             infiasco.flush();
             infiasco.close();
@@ -494,10 +599,8 @@ public class AssemblingOpPanel extends OpPanel{
             return;
         }
          
-        if(!cpBool){
-           model = view.getModel();
-           fragments = model.getAllFragmentsA();
-        }
+        model = view.getModel();
+        fragments = model.getAllFragmentsA();
          
          String[] param;
          for(int i=0;i<fragments.size();i++){
@@ -512,7 +615,7 @@ public class AssemblingOpPanel extends OpPanel{
                      +"CONSTRAINTS:\n"+"NO CONSTRAINTS"+"\n\n";
          }
          try{
-            FileOutputStream incon = new FileOutputStream(Defs.path_prot +proteinId+".in.con");
+            FileOutputStream incon = new FileOutputStream(Defs.PROTEINS_PATH +proteinId+".in.con");
             incon.write(prot.getBytes());
             incon.flush();
             incon.close();
@@ -528,7 +631,6 @@ public class AssemblingOpPanel extends OpPanel{
         
     private void constraintEvent(){
         
-
         if(structureSequence.equals("")){
             view.printStringLn("Load a protein first!");
             return;
@@ -538,25 +640,22 @@ public class AssemblingOpPanel extends OpPanel{
             view.printStringLn("Transfer fragments first!");
             return;
         }
-
-        cpBool = true;
         
         model = view.getModel();        
         fragments = model.getAllFragmentsA();
 
+
         /* Open a new Constraint panel with a new thread */
-        cp = new ConstraintPanel(view, structure, fragments);
+        cp = new ConstraintPanel(view, structure, fragments, ruleOn);
                 
         /* Create the thread */
         Thread threadSelectFragments;
         threadSelectFragments = new Thread(cp);
         threadSelectFragments.start();
         
-        /* Print infos */
-        //view.printStringLn("Output loaded on Output Panel");
     }//constraintEvent
     
-    private void solveEvent(){
+    public void solveEvent(){
 
 
         if(structureSequence.equals("")){
@@ -568,26 +667,14 @@ public class AssemblingOpPanel extends OpPanel{
             view.printStringLn("Transfer fragments first!");
             return;
         }
-        
-        if (!cpBool){
-        
-            ConfirmPanel confirmPanel = new ConfirmPanel();
-
-            //Open a confirm dialog
-            int result = JOptionPane.showConfirmDialog(view, confirmPanel, "Fiasco",
-                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-
-             if (result == JOptionPane.CANCEL_OPTION) {
-                return;
-            }
-        }        
+                
         
         saveEvent();
         saveCacheEvent();
         
         //Change permission of the script to be executable
         try{
-            Process permission = new ProcessBuilder("chmod", "+x", Defs.path_script + "solve.sh").start();
+            Process permission = new ProcessBuilder("chmod", "+x", Defs.FIASCO_PATH + "solve.sh").start();
             permission.waitFor();
         }catch(Exception e){
             e.printStackTrace(System.out);
@@ -595,7 +682,7 @@ public class AssemblingOpPanel extends OpPanel{
         
         //Delete any out.pdb file existing
         try{
-            FileOutputStream outpdb = new FileOutputStream(Defs.path_prot +proteinId+".out.pdb");
+            FileOutputStream outpdb = new FileOutputStream(Defs.PROTEINS_PATH +proteinId+".out.pdb");
             outpdb.close();
          }catch (IOException e) {
            view.printStringLn("Error: " + e);
@@ -620,7 +707,7 @@ public class AssemblingOpPanel extends OpPanel{
         //check whether the out.pdb file is empty. 
         //If so, the solver finished improperly (e.g. seg-fault).
         BufferedReader br;
-        String protein = Defs.path_prot
+        String protein = Defs.PROTEINS_PATH
                 +proteinId+ ".out.pdb";
         try{
             br = new BufferedReader(new FileReader(protein));     

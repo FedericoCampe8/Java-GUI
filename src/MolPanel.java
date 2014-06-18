@@ -2,8 +2,6 @@ package jafatt;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import java.awt.event.ActionEvent;
@@ -26,6 +24,7 @@ public abstract class MolPanel extends JPanel{
     private String imSuffix = separator + "images" + separator;
     private String expandString = currentDir + imSuffix + "expandPanel.png";
     private String reduceString = currentDir + imSuffix + "reducePanel.png";
+    boolean expanded;
     
     ImageIcon expandOn = new ImageIcon(expandString);
     ImageIcon reduceOn = new ImageIcon(reduceString);
@@ -82,6 +81,12 @@ public abstract class MolPanel extends JPanel{
         add(molViewPanel, BorderLayout.CENTER);
     }//setup
     
+    public void setLabel(String str){
+        panelName.setText(str);
+        panelName.setForeground(Color.green);
+        validate();
+    }
+    
     public boolean expand(boolean reduced){
         //this.expanded = expanded;
         if(reduced){
@@ -113,11 +118,9 @@ public abstract class MolPanel extends JPanel{
     
     /* Color a specific atom */
     public void colorAtom(String atom, String numFrg, String color){
-        //System.out.println("Before coloring...");
-        System.out.println(Utilities.selectAtomString(atom, numFrg));
+        //System.out.println(Utilities.selectAtomString(atom, numFrg));
         molViewPanel.executeCmd(Utilities.selectAtomString(atom, numFrg));
         molViewPanel.executeCmd(color); 
-        //System.out.println("Colored");
     }//colorAA
     
     /* Color a specific AA */
@@ -134,6 +137,7 @@ public abstract class MolPanel extends JPanel{
     }//colorFragment
     
     public abstract void event();
+    public abstract void switchView(String newView);
     
     
 }//MolPanel

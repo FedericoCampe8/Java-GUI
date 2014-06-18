@@ -40,7 +40,7 @@ public class Fragment{
         /* Check the number of the fragment */
         if(res1[Defs.INFO_NUMPROT].equals(res2[Defs.INFO_NUMPROT])){
             numFragment = res1[Defs.INFO_NUMPROT];
-            System.out.println("NUM_FRAGMENT " + numFragment);
+            System.out.println("NUM_FRAGMENT  ----------------- " + numFragment);
         }else{
             return;
         }
@@ -71,14 +71,11 @@ public class Fragment{
             constraints[i] = false;
         
         proteinID = model.idProteinCode;
-        //proteinID = "null";
-        //System.out.println(proteinID);
+
         fromProteinNum = Integer.toString(model.totalLoadedProteins);
-        offset = "";
+        //offset = "";
         
-        //fragmentStringSequence = getFragmentSequence();
-        fragmentStringSequence = "";
-        //System.out.println(fragmentStringSequence + "----------->>>>>>>>>>>>");
+        fragmentStringSequence = getFragmentSequence();
         
         timeOfCreation = "" + System.currentTimeMillis();
         
@@ -122,7 +119,7 @@ public class Fragment{
         String[] parameters = new String[Defs.FRAGMENT_NUM_PARAMETERS];
         
         /* Set parameters */
-        //parameters[0] = proteinID;
+        parameters[0] = proteinID;
         parameters[1] = fromProteinNum;
         parameters[2] = numFragment;
         parameters[3] = startAtom;
@@ -180,7 +177,7 @@ public class Fragment{
     }//setFragmentNumber
     
     /* Get the fragment sequence string */
-    public String getFragmentSequence(){
+    private String getFragmentSequence(){
         int startAANum = -1;
         int endAANum = -1;
         
@@ -194,11 +191,13 @@ public class Fragment{
         int endIndex = endAANum - model.getCurrentProteinOffset();
         
         /* Debug */
+        /*
         System.out.println("Fragment start: " + startAANum + " end: " 
                 + endAANum + " residue offset: " + model.getCurrentProteinOffset()
                 + " beginIndex: " + beginIndex + " endIndex: " + endIndex
                 + " current Structure String: " 
                 + model.getCurrentProteinSequenceString());
+         */
          
         /* Get the fragment string */
         return model.getCurrentProteinSequenceString().substring(beginIndex, endIndex);

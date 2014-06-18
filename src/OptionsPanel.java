@@ -2,28 +2,28 @@ package jafatt;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
-import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import javax.swing.JButton;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextField;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.JCheckBox;
 import javax.swing.SpringLayout;
 import javax.swing.ImageIcon;
-import javax.swing.BoxLayout;
-import java.io.BufferedWriter;
-import java.io.PrintWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.FileOutputStream;
+import javax.swing.BorderFactory;
+import javax.swing.JRadioButton;
+import javax.swing.ButtonGroup;
 
 public class OptionsPanel extends JFrame implements Runnable {
 
@@ -33,8 +33,10 @@ public class OptionsPanel extends JFrame implements Runnable {
     private String targetPath;
     private JPanel inPanel, inSubPanel;
     private JPanel optionPanel, exitPanel;
-    private JScrollPane scroll;
-    private OpButton ok, cancel, expand;
+    private JPanel mainPanel;
+    private JScrollPane scroll, infoScroll;
+    private OpButton ok, cancel;
+    private MessageArea msArea;
     
     private String currentDir = System.getProperty("user.dir");
     private String separator = Utilities.getSeparator();
@@ -44,8 +46,6 @@ public class OptionsPanel extends JFrame implements Runnable {
     
     ImageIcon iconExpand = new ImageIcon(expandImage);
     ImageIcon iconReduce = new ImageIcon(reduceImage);
-    
-    private boolean advanced = false;
     
     double widthFrame, heighFrame;
 
@@ -61,23 +61,38 @@ public class OptionsPanel extends JFrame implements Runnable {
         Toolkit t = Toolkit.getDefaultToolkit();
         Dimension screensize = t.getScreenSize();
 
-        widthFrame = (screensize.getWidth() * 30.0) / 100.0;  //960
-        heighFrame = (screensize.getHeight() * 27.0) / 100.0;  //540  
+        widthFrame = (screensize.getWidth() * 50.0) / 100.0;  //960
+        heighFrame = (screensize.getHeight() * 30.0) / 100.0;  //540  
 
         inPanel = new JPanel();
         inSubPanel = new JPanel();
         optionPanel = new JPanel();
         exitPanel = new JPanel();
+        mainPanel = new JPanel(new BorderLayout());
 
         /* Setup layout */
-        setLocation((int) (view.getX() + (int) (view.getWidth() / 4)),
-                (int) (view.getY() + (int) (view.getHeight() / 4)));
+        //setLocation((int) (view.getX() + (int) (view.getWidth() / 4)),
+        //        (int) (view.getY() + (int) (view.getHeight() / 4)));
         setPreferredSize(new Dimension((int) widthFrame, (int) heighFrame));
-        setMinimumSize(new Dimension((int) widthFrame, (int) heighFrame));
+        //setMinimumSize(new Dimension((int) widthFrame, (int) heighFrame));
         //setResizable(false);
 
         inPanel.setLayout(new BorderLayout());
         inSubPanel.setLayout(new BorderLayout());
+        scroll = new JScrollPane(inSubPanel,
+                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        
+        msArea = new MessageArea(3, 10);
+        
+        /* Add the scroll bar and set auto-scroll */
+        infoScroll = new JScrollPane(msArea);
+        infoScroll.getVerticalScrollBar().addAdjustmentListener(new AdjustmentListener(){
+            @Override
+            public void adjustmentValueChanged(AdjustmentEvent e){
+               msArea.select(msArea.getHeight() + 1000, 0);
+            }
+        });
 
         /* Internal panel */
         setConstraintPanel = new SetConstraintPanel();
@@ -90,6 +105,8 @@ public class OptionsPanel extends JFrame implements Runnable {
             @Override
             public void buttonEvent(ActionEvent evt) {
                 int[] options = setConstraintPanel.runEvent();
+                if(Defs.FASTA_OPTION == 0 && options[Defs.PDB_FILE] == 0)
+                    return;
                 setVisible(false);
                 runSolver(options);
                 dispose();
@@ -104,88 +121,56 @@ public class OptionsPanel extends JFrame implements Runnable {
                 dispose();
             }
         };
-        
-        expand = new OpButton(iconExpand, "Show more options"){
-            @Override
-            public void buttonEvent(ActionEvent evt){
-                //expandEvent();
-                //setConstraintPanel.update(expanded);             
-            }
-        };
-        expand.setPreferredSize(new Dimension(140, 15));
-        expand.setFocusPainted(false);
-        
+                
         exitPanel.add(ok);
         exitPanel.add(cancel);
         
         optionPanel.setLayout(new BorderLayout());
-        optionPanel.add(expand, BorderLayout.NORTH);
+        //optionPanel.add(expand, BorderLayout.NORTH);
         optionPanel.add(exitPanel, BorderLayout.CENTER); 
         
         inSubPanel.add(setConstraintPanel, BorderLayout.CENTER);
+        inSubPanel.setBorder(BorderFactory.createTitledBorder("Options"));
 
         /* Add panels */
-        inPanel.add(inSubPanel, BorderLayout.CENTER);
+        inPanel.add(scroll, BorderLayout.CENTER);
         inPanel.add(optionPanel, BorderLayout.SOUTH);
         /* Print some infos */
+        mainPanel.add(inPanel, BorderLayout.CENTER);
+        mainPanel.add(infoScroll, BorderLayout.SOUTH);
+        
+        msArea.writeln("Set the constraints for Cocos.",false);
     }//setup
 
     @Override
     public void run() {
         pack();
+        setLocationRelativeTo(null);
         Container ct = getContentPane();
-        ct.add(inPanel);
+        ct.add(mainPanel);
         setVisible(true);
     }//run
 
     public void runSolver(int[] options) {
         
-        if(advanced){
-            
-            //Delete any out.pdb file existing
-            try {
-                FileOutputStream cocosFile = new FileOutputStream(Defs.path_prot 
-                        + HeaderPdb.getProteinId() + ".out.pdb");
-                cocosFile.close();
-                
-                PrintWriter cocos = new PrintWriter(new BufferedWriter(
-                        new FileWriter(Defs.path_prot + HeaderPdb.getProteinId()
-                        + ".in.cocos", true)));
-                cocos.print("TARGET_PROT " + Defs.path_prot + HeaderPdb.getProteinId());
-                cocos.print("\n");
-                cocos.print("KNOWN_PROT " + Defs.path_prot + HeaderPdb.getProteinId());
-                cocos.print("\n");
-                cocos.print(advancedPanel.getCocosFile());
-                cocos.close();
-            } catch (IOException e) {
-                //print exception
-            }
-        }
-        
-        CocosSolver cocos = new CocosSolver(view, options, targetPath, advanced);
-        System.out.println(targetPath);
+        CocosSolver cocos = new CocosSolver(view, options, targetPath, 
+                advancedPanel.getCocosConstraints());
         Thread solver = new Thread(cocos);
         solver.start();
 
     }    
     
-    public void expandEvent(){
-        if(advanced){
+    public void expandEvent(boolean advanced){
+        if(!advanced){
             inSubPanel.remove(advancedPanel);
-            revalidate();
-            repaint();
-            setMinimumSize(new Dimension((int)widthFrame, (int)heighFrame));
             setSize(new Dimension((int)widthFrame, (int)heighFrame));
+            setLocationRelativeTo(null);
             advanced = false;
-            expand.setIcon(iconExpand);
         }else{
             inSubPanel.add(advancedPanel, BorderLayout.SOUTH);
-            revalidate();
-            repaint();
-            setMinimumSize(new Dimension((int)widthFrame, (int)heighFrame + 50));
-            setSize(new Dimension((int)widthFrame, (int)heighFrame + 50));
+            setSize(new Dimension((int)widthFrame + 700, (int)heighFrame + 65));
+            setLocationRelativeTo(null);
             advanced = true;
-            expand.setIcon(iconReduce);
         }
     }
 
@@ -193,11 +178,16 @@ public class OptionsPanel extends JFrame implements Runnable {
 
         /* Components */
         JPanel setPanel, cboxPanel;
-        JPanel advancedPanel;
+        JPanel advancedPanel, pdbPanel;
         JLabel montecarloLabel, gibbsLabel;
         JLabel inputFileLabel, rmsdLabel, verboseLabel;
-        JTextField montecarloText, gibbsText;
-        JCheckBox input, rmsd, verbose, gibbs, cgC;
+        HintTextField montecarloText, gibbsText;
+        JCheckBox rmsd, verbose, gibbs, cgC, download;
+        JRadioButton inputFasta, inputCocos;
+        ButtonGroup group;
+        Downloader dPdb;
+        
+        GridBagConstraints c = new GridBagConstraints();
 
         /* Values */
         public SetConstraintPanel() {
@@ -208,44 +198,96 @@ public class OptionsPanel extends JFrame implements Runnable {
         private void setup() {
 
             setPanel = new JPanel(new SpringLayout());
-            cboxPanel = new JPanel(new GridLayout(5, 1));
+            cboxPanel = new JPanel(new GridBagLayout());
             advancedPanel = new JPanel();
+            pdbPanel = new JPanel(new GridBagLayout());
+            group = new ButtonGroup();
 
             /* Text fields */
-            montecarloText = new JTextField(10);
+            montecarloText = new HintTextField(" Sec ", 10);
             montecarloText.setEnabled(true);
-            montecarloText.setText("10");
+            montecarloText.setHintText("10");
 
-            gibbsText = new JTextField(10);
+            gibbsText = new HintTextField(" Default 10 Sec ", 10);
             gibbsText.setEnabled(true);
+            
+            download = new JCheckBox("Download " + HeaderPdb.getProteinId() + ".pdb");
+            download.setEnabled(false);
+            
+            dPdb = new Downloader();
 
-            input = new JCheckBox("Create input file for cocos from FASTA", true);
+            inputFasta = new JRadioButton("Create input file for Cocos from FASTA", true);
+            inputFasta.addActionListener(
+                    new ActionListener(){
+                        @Override
+                        public void actionPerformed(ActionEvent e){
+                            if(inputFasta.isSelected()){
+                                expandEvent(false);
+                                download.setEnabled(false);
+                            }
+                            
+                        }
+                    });
+            
+            inputCocos = new JRadioButton("Create Cocos input File (Pdb Required)", false);
+            inputCocos.addActionListener(
+                    new ActionListener(){
+                        @Override
+                        public void actionPerformed(ActionEvent e){
+                            if(inputCocos.isSelected())
+                                expandEvent(true);
+                                download.setEnabled(true);
+                        }
+                    });
+            
+            pdbPanel.setBorder(BorderFactory.createTitledBorder("Input File"));
+            group.add(inputFasta);
+            group.add(inputCocos);
             rmsd = new JCheckBox("Set RMSD as objective function", false);
             verbose = new JCheckBox("Print verbose info during computation", true);
             gibbs = new JCheckBox("Gibbs sampling algorithm (default: MonteCarlo)", false);
+            gibbs.setEnabled(false);
             cgC = new JCheckBox("Enable CG constraint", false);
+            cgC.setEnabled(false);
 
 
-            setPanel.add(montecarloLabel = new JLabel(" Timeout Montecarlo sampling (sec.): ", JLabel.TRAILING));
+            setPanel.add(montecarloLabel = new JLabel(" Timeout Montecarlo sampling : ", JLabel.TRAILING));
             montecarloLabel.setLabelFor(montecarloText);
             setPanel.add(montecarloText);
 
-            setPanel.add(gibbsLabel = new JLabel(" Samples for Gibbs sampling (default 10): ", JLabel.TRAILING));
+            setPanel.add(gibbsLabel = new JLabel(" Samples for Gibbs sampling : ", JLabel.TRAILING));
             gibbsLabel.setLabelFor(gibbsText);
             setPanel.add(gibbsText);
 
             SpringUtilities.makeCompactGrid(setPanel, 2, 2, 10, 10, 10, 10);
 
-            cboxPanel.add(input);
-            cboxPanel.add(rmsd);
-            cboxPanel.add(verbose);
-            cboxPanel.add(gibbs);
-            cboxPanel.add(cgC);
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.gridy = 0;
+            pdbPanel.add(inputFasta,c);
+            c.gridy = 1;
+            pdbPanel.add(inputCocos,c);
+            c.gridy = 2;
+            c.insets = new Insets(0,50,0,0);
+            pdbPanel.add(download,c);
+            c.insets = new Insets(0,0,0,0);
             
-            //setLayout(new BorderLayout());
-
-            add(setPanel);
-            add(cboxPanel);
+            
+            c.gridy = 0;
+            cboxPanel.add(pdbPanel,c);
+            c.gridy = 1;
+            cboxPanel.add(rmsd,c);
+            c.gridy = 2;
+            cboxPanel.add(verbose,c);
+            c.gridy = 3;
+            cboxPanel.add(gibbs,c);
+            c.gridy = 4;
+            cboxPanel.add(cgC,c);
+            
+            setLayout(new GridBagLayout());
+            c.gridx = 0;
+            add(setPanel,c);
+            c.gridx = 1;
+            add(cboxPanel,c);
 
         }//setup
         
@@ -253,7 +295,20 @@ public class OptionsPanel extends JFrame implements Runnable {
 
             String[] options = {"", ""};
 
-            int[] values = {0, 0, 0, 0, 0, 0, 0};
+            int[] values = {0, 0, 0, 0, 0, 0, 0, 0};
+            
+            if(download.isSelected()){
+                //int[] downloaded = Utilities.downloadProtein(HeaderPdb.getProteinId(), true);
+                int[] downloaded = Downloader.downloadProtein(HeaderPdb.getProteinId(), true, false);
+                if (downloaded[0] == 0){
+                    msArea.writeln("Error downloading " +
+                            HeaderPdb.getProteinId() + ".pdb " +
+                            "from the rcbs.com protein database. " +
+                            "Check your Internet Connection.");
+                }
+                values[Defs.PDB_FILE] = downloaded[1];
+                
+            }
 
             /* Get the values */
             options[0] = montecarloText.getText();
@@ -263,23 +318,27 @@ public class OptionsPanel extends JFrame implements Runnable {
             try {
                 if (!options[0].equals("")) {
                     if (Integer.parseInt(options[0]) > 0) {
-                        values[0] = Integer.parseInt(options[0]);
+                        values[Defs.MONTECARLO_SAMPLING] = Integer.parseInt(options[0]);
                     }
                 }
+            }catch (NumberFormatException nfe) {
+                montecarloText.setHintText("");
+            }
+            try{
                 if (!options[1].equals("")) {
                     if (Integer.parseInt(options[1]) > 0) {
-                        values[1] = Integer.parseInt(options[1]);
+                        values[Defs.GIBBS_SAMPLING] = Integer.parseInt(options[1]);
                     }
                 }
             } catch (NumberFormatException nfe) {
-                montecarloText.setText("");
+                gibbsText.setHintText("");
             }
 
-            values[2] = input.isSelected() ? 1 : 0;
-            values[3] = rmsd.isSelected() ? 1 : 0;
-            values[4] = verbose.isSelected() ? 1 : 0;
-            values[5] = gibbs.isSelected() ? 1 : 0;
-            values[6] = cgC.isSelected() ? 1 : 0;
+            values[Defs.FASTA_OPTION] = inputFasta.isSelected() ? 1 : 0;
+            values[Defs.RMSD_OPTION] = rmsd.isSelected() ? 1 : 0;
+            values[Defs.VERBOSE_OPTION] = verbose.isSelected() ? 1 : 0;
+            values[Defs.GIBBS_OPTION] = gibbs.isSelected() ? 1 : 0;
+            values[Defs.CGC_OPTION] = cgC.isSelected() ? 1 : 0;
 
             return values;
 
@@ -288,9 +347,9 @@ public class OptionsPanel extends JFrame implements Runnable {
 
     private class AdvancedPanel extends JPanel {
 
-        JTextField strStartText, strEndText, strPriorityText;
-        JTextField coStartText, coEndText, coPriorityText;
-        JTextField scopeStartText, scopeEndText;
+        HintTextField strStartText, strEndText, strPriorityText;
+        HintTextField coStartText, coEndText, coPriorityText;
+        HintTextField scopeStartText, scopeEndText;
         JComboBox structure, strSearch;
         JComboBox coordinator, coSearch;
         
@@ -302,7 +361,7 @@ public class OptionsPanel extends JFrame implements Runnable {
         String[] searchOption = {"", "icm", "gibbs",
             "montecarlo", "complete"};
         
-        String cocosFile = "";
+        String cocosConstraints = "";
 
         public AdvancedPanel() {
             setup();
@@ -321,14 +380,16 @@ public class OptionsPanel extends JFrame implements Runnable {
                 }
             };
             
-            strStartText = new JTextField(5);
+            strStartText = new HintTextField(" Start AA ", 6);
             strStartText.setPreferredSize(
                     addButton.getPreferredSize());
-            strEndText = new JTextField(5);
+            strEndText = new HintTextField(" End AA ", 6);
             strEndText.setPreferredSize(
                     addButton.getPreferredSize());
             strStartText.setEditable(false);
+            strStartText.removeListener();
             strEndText.setEditable(false);
+            strEndText.removeListener();
             
             structure = new JComboBox();
             structure.addItem("");
@@ -343,14 +404,18 @@ public class OptionsPanel extends JFrame implements Runnable {
                             if (structure.getSelectedIndex() == 0) {
                                 strStartText.setEditable(false);
                                 strEndText.setEditable(false);
+                                strStartText.removeListener();
+                                strEndText.removeListener();
                             } else {
                                 strStartText.setEditable(true);
                                 strEndText.setEditable(true);
+                                strStartText.addListener();
+                                strEndText.addListener();
                             }
                         }
                     });
             
-            strPriorityText = new JTextField(5);
+            strPriorityText = new HintTextField(" Int ", 5);
             strPriorityText.setPreferredSize(
                     addButton.getPreferredSize());
             
@@ -362,14 +427,16 @@ public class OptionsPanel extends JFrame implements Runnable {
             strSearch.addItem("Complete");
             strSearch.setSelectedIndex(0);
             
-            coStartText = new JTextField(5);
+            coStartText = new HintTextField(" Start AA ", 6);
             coStartText.setPreferredSize(
                     addButton.getPreferredSize());
-            coEndText = new JTextField(5);
+            coEndText = new HintTextField(" End AA ", 6);
             coEndText.setPreferredSize(
                     addButton.getPreferredSize());
             coStartText.setEditable(false);
             coEndText.setEditable(false);
+            coStartText.removeListener();
+            coEndText.removeListener();
             
             coordinator = new JComboBox();
             coordinator.addItem("");
@@ -383,21 +450,26 @@ public class OptionsPanel extends JFrame implements Runnable {
                             if (coordinator.getSelectedIndex() == 0) {
                                 coStartText.setEditable(false);
                                 coEndText.setEditable(false);
+                                coStartText.removeListener();
+                                coEndText.removeListener();
+                                
                             } else {
                                 coStartText.setEditable(true);
                                 coEndText.setEditable(true);
+                                coStartText.addListener();
+                                coEndText.addListener();
                             }
                         }
                     });
             
-            coPriorityText = new JTextField(5);
+            coPriorityText = new HintTextField(" Int ", 5);
             coPriorityText.setPreferredSize(
                     addButton.getPreferredSize());
             
-            scopeStartText = new JTextField(5);
+            scopeStartText = new HintTextField(" Start AA ", 6);
             scopeStartText.setPreferredSize(
                     addButton.getPreferredSize());
-            scopeEndText = new JTextField(5);
+            scopeEndText = new HintTextField(" End AA ", 6);
             scopeEndText.setPreferredSize(
                     addButton.getPreferredSize());
             
@@ -429,70 +501,96 @@ public class OptionsPanel extends JFrame implements Runnable {
             coPanel.add(new JLabel(" Priority: "));
             coPanel.add(coPriorityText);
             coPanel.add(coSearch);
-            coPanel.add(addButton);
+            //coPanel.add(addButton);
             
-            setLayout(new GridLayout(2,1));
+            //setLayout(new SpringLayout());
             add(strPanel);
             add(coPanel);
+            add(addButton);
+            setBorder(BorderFactory.createTitledBorder("Advanced Options (Pdb Required)"));
+            //SpringUtilities.makeCompactGrid(this, 2, 2, 10, 10, 10, 10);
             //add(addButton);
 
         }
         
         public void addEvent (){            
             
+            String cocosLine = "";
+            
             if(structure.getSelectedIndex() != 0){
-                cocosFile = cocosFile + strOption[structure.getSelectedIndex()];
+                cocosLine = cocosLine + strOption[structure.getSelectedIndex()];
                 try{
                     int start = Integer.parseInt(strStartText.getText());
                     int end = Integer.parseInt(strEndText.getText());
                     if((start < 0) || (end < 0)){
-                        //print exception
+                        cocosLine = cocosLine + " >> " + start + " " + end + " << " + 
+                                "negative numbers.";
+                        msArea.writeln("Error " + cocosLine);
                         return;
                     }
                     if(start < end) {
-                        cocosFile = cocosFile + " " + start + " " + end + " ";
+                        cocosLine = cocosLine + " " + start + " " + end + " ";
                     }else{
-                    //print exception
+                        cocosLine = cocosLine + " >> " + start + " " + end + " << .";
+                        msArea.writeln("Error " + cocosLine);
+                        return;
                     }
                 }catch(NumberFormatException nfe){
-                    //print exception
+                    cocosLine = cocosLine + " >> " + strStartText.getText() +
+                            " " + strEndText.getText() + " << " + 
+                                "not numbers.";
+                    msArea.writeln("Error " + cocosLine);
+                    return;
                 }
             }
             if (!strPriorityText.getText().equals("")){
                 try{
                     int priority = Integer.parseInt(strPriorityText.getText());
                     if(priority < 0){
-                        //print exception
+                        cocosLine = cocosLine + " >> " + priority + " << " + 
+                                "negative number.";
+                        msArea.writeln("Error " + cocosLine);
                         return;
                     }
-                    cocosFile = cocosFile + "p " + priority + " ";
+                    cocosLine = cocosLine + "p " + priority + " ";
                     
                 }catch(NumberFormatException nfe){
-                    //print exception
+                    cocosLine = cocosLine + " >> " + strPriorityText.getText() +
+                             " << " + "not a number.";
+                    msArea.writeln("Error " + cocosLine);
+                    return;
                 }
             }
             
             if(strSearch.getSelectedIndex() != 0){
-                cocosFile = cocosFile 
+                cocosLine = cocosLine 
                         + searchOption[strSearch.getSelectedIndex()] + " ";
             }
             
             if(coordinator.getSelectedIndex() != 0){
-                cocosFile = cocosFile + coOption[coordinator.getSelectedIndex()];
+                cocosLine = cocosLine + coOption[coordinator.getSelectedIndex()];
                 try{
                     int start = Integer.parseInt(coStartText.getText());
                     int end = Integer.parseInt(coEndText.getText());
                     if((start < 0) || (end < 0)){
-                        //print exception
+                        cocosLine = cocosLine + " >> " + start + " " + end + " << " + 
+                                "negative numbers.";
+                        msArea.writeln("Error " + cocosLine);
                         return;
                     }
                     if(start < end) {
-                        cocosFile = cocosFile + " " + start + " " + end + " ";
+                        cocosLine = cocosLine + " " + start + " " + end + " ";
                     }else{
-                    //print exception
+                        cocosLine = cocosLine + " >> " + start + " " + end + " << .";
+                        msArea.writeln("Error " + cocosLine);
+                        return;
                     }
                 }catch(NumberFormatException nfe){
-                    //print exception
+                    cocosLine = cocosLine + " >> " + coStartText.getText() +
+                            " " + coEndText.getText() + " << " + 
+                                "not numbers.";
+                    msArea.writeln("Error " + cocosLine);
+                    return;
                 }
             }
             
@@ -502,16 +600,24 @@ public class OptionsPanel extends JFrame implements Runnable {
                     int start = Integer.parseInt(scopeStartText.getText());
                     int end = Integer.parseInt(scopeEndText.getText());
                     if((start < 0) || (end < 0)){
-                        //print exception
+                        cocosLine = cocosLine + " >> " + start + " " + end + " << " + 
+                                "negative numbers.";
+                        msArea.writeln("Error " + cocosLine);
                         return;
                     }
                     if(start < end) {
-                        cocosFile = cocosFile + "s[" + start + "," + end + "] ";
+                        cocosLine = cocosLine + "s[" + start + "," + end + "] ";
                     }else{
-                    //print exception
+                        cocosLine = cocosLine + "s[ >> " + start + " " + end + " << ] .";
+                        msArea.writeln("Error " + cocosLine);
+                        return;
                     }
                 }catch(NumberFormatException nfe){
-                    //print exception
+                    cocosLine = cocosLine + " >> " + scopeStartText.getText() +
+                            " " + scopeEndText.getText() + " << " + 
+                                "not numbers.";
+                    msArea.writeln("Error " + cocosLine);
+                    return;
                 }
             }
             
@@ -519,28 +625,43 @@ public class OptionsPanel extends JFrame implements Runnable {
                 try{
                     int priority = Integer.parseInt(coPriorityText.getText());
                     if(priority < 0){
-                        //print exception
-                        return;
+                       cocosLine = cocosLine + "p >> " + priority + 
+                            " << negative number.";
+                       msArea.writeln("Error " + cocosLine);
+                       return;
                     }
-                    cocosFile = cocosFile + "p " + priority + " ";
+                    cocosLine = cocosLine + "p " + priority + " ";
                     
                 }catch(NumberFormatException nfe){
-                    //print exception
+                    cocosLine = cocosLine + "p >> " + coPriorityText.getText() + 
+                            " << not a number.";
+                    msArea.writeln("Error " + cocosLine);
+                    return;
                 }
             }
             
             if(coSearch.getSelectedIndex() != 0){
-                cocosFile = cocosFile 
+                cocosLine = cocosLine 
                         + searchOption[coSearch.getSelectedIndex()] + " ";
             }
             
-            cocosFile = cocosFile + "\n";
-            System.out.println(""+cocosFile);
+            cocosConstraints = cocosConstraints + cocosLine + "\n";
+            msArea.writeln("Constraint " + cocosLine + " added.");
+            
+            strStartText.setHintText("");
+            strEndText.setHintText("");
+            strPriorityText.setHintText("");
+            coStartText.setHintText("");
+            coEndText.setHintText(""); 
+            coPriorityText.setHintText("");
+            scopeStartText.setHintText("");
+            scopeEndText.setHintText("");
             
         }
         
-        public String getCocosFile(){
-            return cocosFile;
+        
+        public String getCocosConstraints(){
+            return cocosConstraints;
         }
     }
 

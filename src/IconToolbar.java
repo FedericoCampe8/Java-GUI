@@ -17,19 +17,21 @@ import javax.swing.border.Border;
 
 public class IconToolbar extends JToolBar{
     private final int LOADTARGET = 0;
-    private final int LOADPROTEIN = 1;
-    private final int SAVE = 2;
+    private final int DOWNLOAD = 1;
+    private final int COCOS = 2;
     private final int CENTERP = 3;
     private final int MEASURE = 4;
     private final int RESET = 5;
     private final int SHOWCON = 6;
    
     private UserFrameActions ufa;
+    private JButton[] buttons;
     
     public IconToolbar( UserFrameActions ufa, int totalMoveButtons, 
             JButton[] buttons, String[] descriptions, String[] icons, 
             String[] info ){
         addSeparator();
+        this.buttons = buttons;
         setFloatable(false);
         setBorder(BorderFactory.createMatteBorder(0,0,1,0, Defs.INNERCOLOR));
         setBackground(Defs.INNERCOLOR);
@@ -101,9 +103,11 @@ public class IconToolbar extends JToolBar{
             String[] info ){
       this.ufa = ufa;
       int totalButtons = buttons.length;
-      for (int i = 0; i < totalButtons; i++) {
+      //for (int i = 0; i < totalButtons; i++) {
+      for (int i = 0; i < 3; i++) {
          final int id1 = i;
-         final int id2 = i - totalMoveButtons;
+         //final int id2 = i - totalMoveButtons;
+         final int id2 = i - 0;
          
          /* create the button */
          buttons[ i ] = createButton( descriptions[i], icons[i], info[i], i );
@@ -124,7 +128,12 @@ public class IconToolbar extends JToolBar{
                  }
              });
        }
+      buttons[COCOS].setEnabled(false);
     }//createToolbar
+    
+    public void enableCocos(){
+        buttons[COCOS].setEnabled(true);        
+    }
     
     /* Actions for the buttons over the show buttons */
     private void toolActions( int buttonIndex ){
@@ -132,10 +141,11 @@ public class IconToolbar extends JToolBar{
             case LOADTARGET:
                 ufa.loadTargetEvent();
                 break;
-            case LOADPROTEIN:
-                ufa.loadProteinEvent();
+            case DOWNLOAD:
+                ufa.downloadProtein();
                 break;
-            case SAVE:
+            case COCOS:
+                ufa.runCocos();
                 break;
             case MEASURE:
                 ufa.measureEvent();

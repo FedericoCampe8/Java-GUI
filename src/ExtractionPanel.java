@@ -7,7 +7,6 @@ public class ExtractionPanel extends MolPanel{
     
     private ExtractionOpPanel exOP;
     private UserFrame view;
-    boolean expanded;
     
     public ExtractionPanel(UserFrame view, String str){
         super(str);
@@ -28,6 +27,7 @@ public class ExtractionPanel extends MolPanel{
     }//setProtein
     
     /* Change the view of the protein */
+    @Override
     public void switchView(String newView){
         
         /* Change the view */

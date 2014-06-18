@@ -13,15 +13,19 @@ public class MenuBar extends JMenuBar{
     
     private UserFrame view;
     
-    private JMenu fileMenu, editMenu, showMenu, toolsMenu, helpMenu;
-    private JMenuItem openItem, downloadItem, exitItem, wrapItem, 
-        centerItem, resetItem, showItem, measureItem, JmolItem, alignmentItem, helpItem, aboutItem;
+    private JMenu fileMenu, viewMenu, editMenu, showMenu, toolsMenu, helpMenu;
+    private JMenuItem openItem, downloadItem, exitItem, wrapItem,
+            centerItem, resetItem, showItem, measureItem, JmolItem, 
+            alignmentItem, helpItem, aboutItem;
+    
+    public JMenuItem assembleItem, extractItem, outputItem;
     
     public MenuBar(){
         setup();
     }
     
     /* Create the main menu */
+    /*
     private void setup(){
         fileMenu = new JMenu();
         openItem = new JMenuItem();
@@ -29,6 +33,7 @@ public class MenuBar extends JMenuBar{
         openProteinItem = new JMenuItem();
         saveItem = new JMenuItem();
         exitItem = new JMenuItem();
+        viewMenu = new JMenu();
         editMenu = new JMenu();
         wrapItem = new JMenuItem();
         centerItem = new JMenuItem();
@@ -43,7 +48,7 @@ public class MenuBar extends JMenuBar{
         helpItem = new JMenuItem();
         aboutItem = new JMenuItem();
         
-        /* Set the items */
+
         fileMenu.setText("File");
         fileMenu.setMnemonic(KeyEvent.VK_F);
         add(fileMenu);
@@ -58,14 +63,11 @@ public class MenuBar extends JMenuBar{
         openItem.setMnemonic(KeyEvent.VK_O);
         fileMenu.add(openItem);
         
-        downloadItem.setText("Download Target");
+        downloadItem.setText("Download Protein");
         downloadItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                DownloadFastaPanel dfp = new DownloadFastaPanel(view);
-                Thread threadFasta;
-                threadFasta = new Thread(dfp);
-                threadFasta.start();
+                downloadProtein();
             }
         });
         downloadItem.setMnemonic(KeyEvent.VK_O);
@@ -90,7 +92,7 @@ public class MenuBar extends JMenuBar{
             }
         });
         saveItem.setMnemonic(KeyEvent.VK_S);
-        fileMenu.add(saveItem);
+        //fileMenu.add(saveItem);
         
         exitItem.setText("Exit");
         exitItem.addActionListener(new ActionListener() {
@@ -104,7 +106,7 @@ public class MenuBar extends JMenuBar{
         
         editMenu.setText("Edit");
         editMenu.setMnemonic(KeyEvent.VK_E);
-        add(editMenu);
+        //add(editMenu);
 
         wrapItem.setText("Wrap Target");
         wrapItem.addActionListener(new ActionListener() {
@@ -134,7 +136,7 @@ public class MenuBar extends JMenuBar{
         editMenu.add(resetItem);
 
         showMenu.setText("Show");
-        add(showMenu);
+        //add(showMenu);
 
         showItem.setText("Show Constratins");
         showItem.addActionListener(new ActionListener() {
@@ -147,7 +149,7 @@ public class MenuBar extends JMenuBar{
 
         toolsMenu.setText("Tools");
         toolsMenu.setMnemonic(KeyEvent.VK_T);
-        add(toolsMenu);
+        //add(toolsMenu);
 
         measureItem.setText("Measure");
         measureItem.addActionListener(new ActionListener() {
@@ -198,11 +200,164 @@ public class MenuBar extends JMenuBar{
         });
         helpMenu.add(aboutItem);
     }//setup
+    */
+    
+    private void setup() {
+        
+        fileMenu = new JMenu();
+        openItem = new JMenuItem();
+        downloadItem = new JMenuItem();
+        openProteinItem = new JMenuItem();
+        saveItem = new JMenuItem();
+        exitItem = new JMenuItem();
+        viewMenu = new JMenu();
+        assembleItem = new JMenuItem();
+        extractItem = new JMenuItem();
+        outputItem = new JMenuItem();
+        editMenu = new JMenu();
+        helpMenu = new JMenu();
+        helpItem = new JMenuItem();
+        aboutItem = new JMenuItem();
+        
+        /* Set the items */
+        fileMenu.setText("File");
+        fileMenu.setMnemonic(KeyEvent.VK_F);
+        add(fileMenu);
+
+        openItem.setText("Load Target");
+        openItem.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                loadTargetEvent();
+            }
+        });
+        openItem.setMnemonic(KeyEvent.VK_O);
+        fileMenu.add(openItem);
+
+        downloadItem.setText("Download Protein");
+        downloadItem.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                downloadProtein();
+            }
+        });
+        downloadItem.setMnemonic(KeyEvent.VK_O);
+        fileMenu.add(downloadItem);
+
+        openProteinItem.setText("Load Protein");
+        openProteinItem.setEnabled(false);
+        openProteinItem.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                loadProteinEvent();
+            }
+        });
+        fileMenu.add(openProteinItem);
+
+        saveItem.setText("Save Fragments");
+        saveItem.setEnabled(false);
+        saveItem.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                saveEvent();
+            }
+        });
+        saveItem.setMnemonic(KeyEvent.VK_S);
+        //fileMenu.add(saveItem);
+
+        exitItem.setText("Exit");
+        exitItem.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                exitEvent();
+            }
+        });
+        exitItem.setMnemonic(KeyEvent.VK_X);
+        fileMenu.add(exitItem);
+        
+        viewMenu.setText("View");
+        viewMenu.setMnemonic(KeyEvent.VK_V);
+        
+        extractItem.setText("Extraction Panel");
+        extractItem.setMnemonic(KeyEvent.VK_E);
+        extractItem.setEnabled(false);
+        extractItem.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                viewEvent(Defs.EXTRACTION);
+            }
+        });
+        viewMenu.add(extractItem);
+        
+        assembleItem.setText("Assembling Panel");
+        assembleItem.setMnemonic(KeyEvent.VK_A);
+        assembleItem.setEnabled(false);
+        assembleItem.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                viewEvent(Defs.ASSEMBLING);
+            }
+        });
+        viewMenu.add(assembleItem);
+        
+        outputItem.setText("OutPut Panel");
+        outputItem.setMnemonic(KeyEvent.VK_O);
+        outputItem.setEnabled(false);
+        outputItem.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                viewEvent(Defs.OUTPUT);
+            }
+        });
+        viewMenu.add(outputItem);
+        
+        add(viewMenu);
+
+        editMenu.setText("Edit");
+        editMenu.setMnemonic(KeyEvent.VK_E);
+        //add(editMenu);
+
+        helpMenu.setText("Help");
+        helpMenu.setMnemonic(KeyEvent.VK_HELP);
+        add(helpMenu);
+
+        helpItem.setText("Help...");
+        helpItem.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                helpEvent();
+            }
+        });
+        helpMenu.add(helpItem);
+
+        aboutItem.setText("About");
+        aboutItem.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                aboutEvent();
+            }
+        });
+        helpMenu.add(aboutItem);
+    }//setup
     
     /* Load the target */
    private void loadTargetEvent(){
         view.getViewActions().loadTargetEvent();
    }//loadTargetEvent
+   
+   private void downloadProtein(){
+       view.getViewActions().downloadProtein();       
+   }
    
    /* Load a protein from which extract the fragments */
    private void loadProteinEvent(){
@@ -226,6 +381,17 @@ public class MenuBar extends JMenuBar{
        }else
            return;      
    }//exitEvent
+   
+   private void viewEvent(int panel){
+       
+       Thread threadViewOptions;
+       ViewOptionsPanel vop = new ViewOptionsPanel(view, panel);
+
+       /* Create the thread */
+       threadViewOptions = new Thread(vop);
+       threadViewOptions.start();
+       
+   }
    
    /* Wrap the target sequence */
    private void wrapEvent(ActionEvent evt){

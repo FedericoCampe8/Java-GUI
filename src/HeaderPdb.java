@@ -45,8 +45,6 @@ public class HeaderPdb {
         } catch (IOException e) {
         }
         targetSequence = target;
-        System.out.println(target);
-        System.out.println(firstAA + " " + lastAA + " " + lastAAH);
 
     }
     

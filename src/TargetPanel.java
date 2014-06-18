@@ -3,13 +3,8 @@ package jafatt;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.GridLayout;
-import java.awt.FlowLayout;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JButton;
-import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import org.biojava.bio.gui.sequence.MultiLineRenderer;
 import org.biojava.bio.gui.sequence.OffsetRulerRenderer;
 import org.biojava.bio.gui.sequence.SequencePanelWrapper;
@@ -28,26 +23,20 @@ public class TargetPanel extends JPanel{
     private SequencePanelWrapper sequencePanel2;
     private Sequence seq;
     private Sequence seq2;
+    private Sequence seqEmpty;
     private OffsetRulerRenderer offsetRenderer;
-    private OpButton cocosButton;
     
     /* Offset string */
     private String offsetString;
     private int targetLength;
     
-    UserFrame view;
-    Boolean mainPanel;
-    
-    public TargetPanel(UserFrame view, Boolean mainPanel){
-        setupSequencePanel(view, mainPanel);
+    public TargetPanel(){
+        setupSequencePanel();
         setup();
     }
     
     /* Set the sequence visualizer */
-    private void setupSequencePanel(UserFrame view, Boolean mainPanel){
-        
-        this.view = view;
-        this.mainPanel = mainPanel;
+    private void setupSequencePanel(){
         
         /* Renderers for the sequences */
         MultiLineRenderer multi = new MultiLineRenderer();
@@ -74,30 +63,10 @@ public class TargetPanel extends JPanel{
     private void setup(){
         setLayout( new BorderLayout() );
         JPanel pnl = new JPanel();
-        JPanel cocosPanel = new JPanel();
-        
-        //cocosButton = new JButton("Run Cocos");
-        cocosButton = new OpButton("Run Cocos", "") {
-            @Override
-            public void buttonEvent(ActionEvent evt){
-                cocosEvent();
-            }
-        };
-
-        
         pnl.setLayout(new GridLayout(2, 1));
         sequencePanel.setBackground(Color.WHITE);
         pnl.add(sequencePanel);
-        //pnl.add(sequencePanel2);
-        cocosPanel.setLayout(new BorderLayout());
-        cocosPanel.add(cocosButton, BorderLayout.WEST);
-        if(mainPanel){
-            pnl.add(cocosPanel);
-        }else{
-            JPanel empty = new JPanel();
-            empty.setBackground(Color.WHITE);
-            pnl.add(empty);
-        }
+        pnl.add(sequencePanel2);
         add(new JScrollPane(pnl), BorderLayout.CENTER);
     }//setup
     
@@ -130,6 +99,7 @@ public class TargetPanel extends JPanel{
         seqPan.setTrackLayout(
                 new SimpleTrackLayout(seqPan.getSequence(), Defs.INITIALWRAP)
                 );
+        
     }//setSequence
     
     /* Set the target sequence */
@@ -177,26 +147,23 @@ public class TargetPanel extends JPanel{
         offsetString = Utilities.replaceSubstring(offsetString, 
                 fragmentSequenceString, fragmentOffset);
         /* Set the string into the Target panel */
+        
         setOffsetTarget(offsetString);
     }//takeFragmentString
     
-    public void updatePanel(){
-        //int targetLength = offsetString.length();
-        offsetString = "";
-        for(int i = 0; i < targetLength; i++)
-            offsetString = offsetString + "_";
-    }
     
-    public void cocosEvent(){
-        int[] op = {10,0,0};
-        OptionsPanel opPanel = new OptionsPanel(view,view.getModel().getTargetPath());
-        Thread panel = new Thread(opPanel);
-        panel.start();
-        /*
-        CocosSolver solver = new CocosSolver(view, op,view.getModel().getTargetPath());
-        Thread cocos = new Thread(solver);
-        cocos.start();
-        */
+    /*
+     * dopo due iterazioni chiamate in UpdateView
+     * fragmentSequenceString   EEQRNAKIKSIR 25
+       offsetString _________________________EEQRNAKIKS
+     * fragmentSequenceString   MQCQRRFYEA 8
+       offsetString ________MQCQRRFYEA_______EEQRNAKIKS
+     */
+    
+    public void reset(){
+        offsetString = "";
+        for (int i = 0; i < targetLength; i++)
+            offsetString = offsetString + "_";
     }
 
 }//TargetPanel

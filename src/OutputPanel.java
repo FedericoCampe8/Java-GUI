@@ -7,10 +7,11 @@ public class OutputPanel extends MolPanel{
     
     private OutputOpPanel outOP;
     private UserFrame view;
-    boolean expanded;
+    private String str;
     
     public OutputPanel (UserFrame view, String str){
         super(str);
+        this.str = str;
         setup(view);        
     }
     
@@ -25,9 +26,22 @@ public class OutputPanel extends MolPanel{
         
     }//setup
     
+    public void updateRmsd(String rmsd){
+        setLabel(str + "  (RMSD " + rmsd + " \u212B)");
+        
+    }
+    
      public void setProtein(Structure structure){
         outOP.setProtein(structure);
     }//setProtein
+    
+     @Override
+    public void switchView(String newView){
+        
+        /* Change the view */
+        molViewPanel.executeCmd(newView);
+        
+    }//switchView
     
     public void loadOutput(Structure structure){
         view.loadOutput(structure);

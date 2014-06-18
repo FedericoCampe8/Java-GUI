@@ -16,13 +16,15 @@ public class Bin extends JSplitPane{
     int def = -1;
     JFrame view;
     
-    public Bin(JFrame view, JPanel targetPanel, JPanel extractionPanel, JPanel assemblingPanel, JPanel outputPanel){
+    public Bin(JFrame view, JPanel targetPanel, JPanel extractionPanel,
+            JPanel assemblingPanel, JPanel outputPanel){
         super( JSplitPane.VERTICAL_SPLIT, false );
         setup(view, targetPanel, extractionPanel, assemblingPanel, outputPanel);
     }
     
     /* Set the layout */
-    private void setup(JFrame view, JPanel targetPanel, JPanel extractionPanel, JPanel assemblingPanel, JPanel outputPanel){
+    private void setup(JFrame view, JPanel targetPanel, JPanel extractionPanel,
+            JPanel assemblingPanel, JPanel outputPanel){
         //JSplitPane bottomPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, false, 
         //        extractionPanel, assemblingPanel);
         

@@ -14,14 +14,18 @@ The interface is composed by three main panels:
 3) The "Output" panel: it visualizes the results computed by FIASCO, and it allows the user to transfer a structure on the Extraction panel to repeat the process again.
 
 How to use it:
-- cd solver
-- cd solver/cocos
+- cd Solver
+- cd Solver/Cocos
 - ./CompileAndRun.sh
 - cd ..
-- make 
-- jafatt.jar
+- cd Solver/Fiasco
+- make clean
+- make
+- cd ..
+- cd ..
+- java -jar jafatt.jar
 
-Note: the "src" folder contains the java files, while the "solver" folder contains the solvers.
+Note: the "src" folder contains the java files, while the "Solver" folder contains the folders of the Solvers.
 Note: This is an ongoing project. Some bugs may be present!
 
 

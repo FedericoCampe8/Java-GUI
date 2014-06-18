@@ -12,22 +12,21 @@ import java.awt.event.WindowListener;
 public class CocosSolver extends JFrame implements Runnable, WindowListener {
     
     UserFrame view;
-    private InfoPanel ip;
     Process p;
-    Boolean running = true;
-    int exitValue;
-    int[] options;
-    String targetPath;
-    Boolean inCocos;
+    private InfoPanel ip;
+    private Boolean running = true;
+    private int exitValue;
+    private int[] options;
+    private String targetPath, cocosFile;
     /* Setup */
-    public CocosSolver(UserFrame view, int[] options, String targetPath, boolean inCocos){
+    public CocosSolver(UserFrame view, int[] options, String targetPath, String cocosFile){
         
         super("Cocos");
          
         this.view = view;
         this.options = options;
         this.targetPath = targetPath;
-        this.inCocos = inCocos;
+        this.cocosFile = cocosFile;
         
         Toolkit t = Toolkit.getDefaultToolkit();
         Dimension screensize = t.getScreenSize();
@@ -40,9 +39,9 @@ public class CocosSolver extends JFrame implements Runnable, WindowListener {
         int y = (int) ((screensize.height / 2) - (heightFrame / 2));    
         this.setLocation(x, y);
         setResizable(true);
-        addWindowListener(this);
-        
         ip = new InfoPanel(false);
+        
+        addWindowListener(this);
         
     }//setup
     
@@ -53,20 +52,21 @@ public class CocosSolver extends JFrame implements Runnable, WindowListener {
        Container ct = getContentPane();
        ct.add(ip);
        setVisible(true);
+       setLocationRelativeTo(null);
        boolean ok = false;
        String line = "";
        exitValue = -1;
-       buildScript(options, inCocos);
+       buildScript(options);
        try{
-            FileOutputStream cocosSh = new FileOutputStream(Defs.path_prot +
+            FileOutputStream cocosPdb = new FileOutputStream(Defs.PROTEINS_PATH +
                 HeaderPdb.getProteinId() + ".cocos.pdb");
-            cocosSh.close();
+            cocosPdb.close();
         }catch (IOException e) {
             view.printStringLn("Error: " + e);
         }
        try{
             ProcessBuilder process = new ProcessBuilder("./cocosScript.sh");
-            process.directory(new File(Defs.path_cocos));
+            process.directory(new File(Defs.COCOS_PATH));
             p = process.start();
             //p.waitFor();
             BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -89,8 +89,8 @@ public class CocosSolver extends JFrame implements Runnable, WindowListener {
            view.printStringLn("Solver finished improperly");
            return;
        }
-       String outputPath = Defs.path_prot + HeaderPdb.getProteinId() + ".cocos.pdb";
-       view.initProtinLoaded();
+       String outputPath = Defs.PROTEINS_PATH + HeaderPdb.getProteinId() + ".cocos.pdb";
+       view.initProteinLoaded();
        ok = view.getController().loadStructure(outputPath, Defs.EXTRACTION, true);
        
        if(ok){
@@ -107,18 +107,42 @@ public class CocosSolver extends JFrame implements Runnable, WindowListener {
        */
     }
     
-    public void buildScript(int[] options, boolean inCocos){
-        //controls of the values TO DO
+    public void buildScript(int[] options){
+        
         String cmd = "./cocos -i ";
-        //input path
-        cmd = cmd + targetPath + " ";
+        
+        if(options[Defs.FASTA_OPTION]==0){
+            
+            //Delete any in.cocos file existing
+            try {
+                FileOutputStream cocosStream = new FileOutputStream(Defs.PROTEINS_PATH 
+                        + HeaderPdb.getProteinId() + ".in.cocos");
+                cocosStream.close();
+                
+                PrintWriter cocos = new PrintWriter(new BufferedWriter(
+                        new FileWriter(Defs.PROTEINS_PATH + HeaderPdb.getProteinId()
+                        + ".in.cocos", true)));
+                cocos.print("TARGET_PROT " + Defs.PROTEINS_PATH + HeaderPdb.getProteinId());
+                cocos.print("\n");
+                cocos.print("KNOWN_PROT  " + Defs.PROTEINS_PATH + HeaderPdb.getProteinId());
+                cocos.print("\n");
+                cocos.print(cocosFile);
+                cocos.close();
+            } catch (IOException e) {
+                //print exception
+            }
+            
+            cmd = cmd + Defs.PROTEINS_PATH + HeaderPdb.getProteinId() + ".in.cocos ";
+        }else{
+            cmd = cmd + targetPath + " ";
+        }
+        
         //output file targetID.cocos.pdb
         //HeaderPdb.targetId(targetPath);
-        cmd = cmd + "-o " + Defs.path_prot +
+        cmd = cmd + "-o " + Defs.PROTEINS_PATH +
                 HeaderPdb.getProteinId() + ".cocos.pdb";
-        if (!inCocos){
+        if (options[Defs.FASTA_OPTION]!=0)
             cmd = cmd + " -a";
-        }
         if (options[Defs.MONTECARLO_SAMPLING] != 0)
             cmd = cmd + " -c " + options[Defs.MONTECARLO_SAMPLING];
         if (options[Defs.GIBBS_SAMPLING] != 0)
@@ -132,12 +156,21 @@ public class CocosSolver extends JFrame implements Runnable, WindowListener {
         if (options[Defs.CGC_OPTION] != 0)
             cmd = cmd + " -e";
         try{
-            FileOutputStream cocosSh = new FileOutputStream(Defs.path_cocos + "/cocosScript.sh");
+            FileOutputStream cocosSh = new FileOutputStream(Defs.COCOS_PATH 
+                    + "cocosScript.sh");
             cocosSh.write(cmd.getBytes());
             cocosSh.flush();
             cocosSh.close();
         }catch (IOException e) {
             view.printStringLn("Error: " + e);
+        }
+        
+         try{
+            Process permission = new ProcessBuilder("chmod", "+x",
+                    Defs.COCOS_PATH + "cocosScript.sh").start();
+            permission.waitFor();
+        }catch(Exception e){
+            e.printStackTrace(System.out);
         }
     }
     
@@ -147,6 +180,8 @@ public class CocosSolver extends JFrame implements Runnable, WindowListener {
     public void windowClosing(WindowEvent e) {
         running = false;
         p.destroy();
+        setVisible(false);
+        dispose();
     }
     @Override
     public void windowOpened(WindowEvent e) {}

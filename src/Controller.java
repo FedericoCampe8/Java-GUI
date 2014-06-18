@@ -232,6 +232,10 @@ public class Controller{
         return infoPanel;
     }
     
+    public String getPath(){
+        return loadPath;
+    }
+    
     /* Color a specific fragment */
     public void colorFragment(Fragment frg, String color, int panel){
         view.upView.colorFragment(frg, color, panel); 
@@ -299,6 +303,10 @@ public class Controller{
         /* Return */
         return ok;
     }//loadProtein
+    
+    public void loadProteinRmsd(){
+        view.rmsd.loadProtein(loadPath);        
+    }
     
     /* Check if a residue is already present in the Extraction panel */
     public boolean isResidueAlreadyPresent(String info[]){
@@ -387,7 +395,6 @@ public class Controller{
             
             /* Set the unique number for the fragment */
             fragmentNumber++;
-            System.out.println("FRAGMENT NUMBER " + fragmentNumber);
             fragments.get(i).setFragmentNumber("" + fragmentNumber);
             
             /* Create a new fragment to add to the fragments present on the
@@ -411,8 +418,8 @@ public class Controller{
             model.addFragmentA(newFragment);   
         }
         
-        ((AssemblingPanel)view.getPanel(Defs.ASSEMBLING)).executeCmd("load " + Defs.path_prot+model.idProteinCode+".in.pdb ;");
-        ((AssemblingPanel)view.getPanel(Defs.ASSEMBLING)).executeCmd("axes on; center; ");
+        view.upView.execute("load " + Defs.PROTEINS_PATH+model.idProteinCode+".in.pdb ; ", Defs.ASSEMBLING);
+        view.upView.prepareStructure(Defs.ASSEMBLING);
         
         /* Connect the fragments on the Assembling panel */
         view.upView.connectFragments(true);
@@ -420,6 +427,8 @@ public class Controller{
         /* Delete the fragments from Extraction panel */
         for(int i = 0; i < numFragments; i++)
             model.deleteFragmentE(0);
+        
+        ((TargetPanel)view.getPanel(Defs.TARGET)).reset();
         
         setup();
         
@@ -465,7 +474,7 @@ public class Controller{
         ArrayList<Fragment> fragments = model.getAllFragments(Defs.ASSEMBLING);
         
         try {
-            Scanner scanner = new Scanner(new File("cache.pdb"));
+            Scanner scanner = new Scanner(new File(Defs.TEMP + "cache.pdb"));
           
             for (int k = 0; k < fragments.size(); k++) {
 
@@ -506,10 +515,10 @@ public class Controller{
         }
 
         try{
-            FileOutputStream inpdb = new FileOutputStream(Defs.path_prot +model.idProteinCode+".in.pdb");
+            FileOutputStream inpdb = new FileOutputStream(Defs.PROTEINS_PATH +model.idProteinCode+".in.pdb");
             inpdb.close();
             PrintWriter out = new PrintWriter(new BufferedWriter(
-                    new FileWriter(Defs.path_prot + model.idProteinCode +".in.pdb", true)));
+                    new FileWriter(Defs.PROTEINS_PATH + model.idProteinCode +".in.pdb", true)));
             out.print(text);
             out.close();
         }catch (IOException e) {

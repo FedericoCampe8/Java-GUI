@@ -7,21 +7,21 @@ import javax.swing.JOptionPane;
 import org.biojava.bio.gui.sequence.tracklayout.SimpleTrackLayout;
 
 public class UserFrameActions{
-   private boolean loadATarget;
-   private boolean loadAProtein;
+   public boolean loadATarget;
+   public boolean loadAProtein;
    private Controller ctr;
-   private UserFrame uf;
+   private UserFrame view;
    
-   public UserFrameActions(Controller ctr, UserFrame uf){
-       setup(ctr, uf);
+   public UserFrameActions(Controller ctr, UserFrame view){
+       setup(ctr, view);
    }
    
    /* Setup */
-   private void setup(Controller ctr, UserFrame uf){
+   private void setup(Controller ctr, UserFrame view){
        loadATarget = false;
        loadAProtein = false;
        this.ctr = ctr;
-       this.uf = uf;
+       this.view = view;
    }//setup
     
    /* Measure fragments */
@@ -56,19 +56,19 @@ public class UserFrameActions{
            try{
                i = Integer.parseInt(result);
            }catch(NumberFormatException nfe){
-               uf.printStringLn("Please, enter a number");
+               view.printStringLn("Please, enter a number");
                return;
            }
            
            /* Set a new layout for the target sequence */
-           ((TargetPanel)uf.getPanel(Defs.TARGET)).getTargetSequence().setTrackLayout(
+           ((TargetPanel)view.getPanel(Defs.TARGET)).getTargetSequence().setTrackLayout(
                    new SimpleTrackLayout(
-                           ( (TargetPanel)uf.getPanel(Defs.TARGET)).getTargetSequence().getSequence(),
+                           ( (TargetPanel)view.getPanel(Defs.TARGET)).getTargetSequence().getSequence(),
                            i )
                    );
-           uf.printStringLn("Target wrapped on " +  i);
+           view.printStringLn("Target wrapped on " +  i);
        }else
-           uf.printStringLn("Load a target first");
+           view.printStringLn("Load a target first");
    }//wrapTarget
    
    /* Load target protein */
@@ -80,7 +80,7 @@ public class UserFrameActions{
        
        /* Select option panel */
        String result = (String)JOptionPane.showInputDialog(
-               uf, "Select the source", "Load Target",
+               view, "Select the source", "Load Target",
                JOptionPane.QUESTION_MESSAGE, null, options, "From FASTA" );
        try{
            fromPDB = result.equals("From PDB");
@@ -89,12 +89,12 @@ public class UserFrameActions{
        /* Open the file chooser to select the file target */
        if(result != null){
            //choice = new JFileChooser();
-           choice = new JFileChooser(Defs.path_prot);
+           choice = new JFileChooser(Defs.PROTEINS_PATH);
            try{
-               int option = choice.showOpenDialog(uf);
+               int option = choice.showOpenDialog(view);
                targetPath = choice.getSelectedFile().getAbsolutePath();
            }catch(Exception eopen){
-               uf.printString("Error on loading target from file: " + eopen);
+               view.printString("Error on loading target from file: " + eopen);
            }
            
            /* Load the target */
@@ -102,22 +102,35 @@ public class UserFrameActions{
            ok = ctr.loadStructure(targetPath, Defs.TARGET, fromPDB);
            if(ok){
                loadATarget = true;
-               uf.targetLoaded();
+               view.targetLoaded();
            }else{
-               uf.printStringLn("Error on loading the target");
+               view.printStringLn("Error on loading the target");
            }
        }
    }//loadTargetEvent
    
+   public void downloadProtein(){       
+       DownloadProteinPanel dpp = new DownloadProteinPanel(view);
+       Thread threadFasta;
+       threadFasta = new Thread(dpp);
+       threadFasta.start();
+   }
+   
+   public void runCocos(){
+        OptionsPanel opPanel = new OptionsPanel(view,view.getModel().getTargetPath());
+        Thread panel = new Thread(opPanel);
+        panel.start();
+    }
+
    /* Load protein where extract fragments */
    public void loadProteinEvent(){
        String proteinPath = "";
        if(loadATarget){
            
            /* Create a file chooser for the protein file */
-           JFileChooser proteinFile = new JFileChooser(Defs.path_prot);
+           JFileChooser proteinFile = new JFileChooser(Defs.PROTEINS_PATH);
            try{
-               proteinFile.showOpenDialog(uf);
+               proteinFile.showOpenDialog(view);
                proteinPath = proteinFile.getSelectedFile().getAbsolutePath();
            }catch(Exception e){
                return;
@@ -127,7 +140,7 @@ public class UserFrameActions{
            boolean ok;
            
            /* Init loading */
-           uf.initProtinLoaded();
+           view.initProteinLoaded();
            
            //HeaderPdb.info(proteinPath);
            
@@ -135,15 +148,15 @@ public class UserFrameActions{
            ok = ctr.loadStructure(proteinPath, Defs.EXTRACTION, true);           
            if(ok){
                loadAProtein = true;
-               uf.proteinLoaded();
+               view.proteinLoaded();
            }else{
                
                /* Stop the progress bar */
-               uf.barPanel.stop();
-               uf.printStringLn("Error on loading the protein");
+               view.barPanel.stop();
+               view.printStringLn("Error on loading the protein");
            }
        } else 
-           uf.printStringLn("Load a target first");
+           view.printStringLn("Load a target first");
    }//loadProteinEvent
    
 }//UserFrameActions

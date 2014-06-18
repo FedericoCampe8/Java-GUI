@@ -44,6 +44,7 @@ public class FiascoSolver extends JFrame implements Runnable, WindowListener {
     @Override
     public void run(){
        pack();
+       setLocationRelativeTo(null);
        Container ct = getContentPane();
        ct.add(ip);
        setVisible(true);
@@ -51,7 +52,7 @@ public class FiascoSolver extends JFrame implements Runnable, WindowListener {
        exitValue = -1;
        try{
             ProcessBuilder process = new ProcessBuilder("./solve.sh");
-            process.directory(new File(Defs.path_script));
+            process.directory(new File(Defs.FIASCO_PATH));
             p = process.start();
             //p.waitFor();
             BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -78,6 +79,8 @@ public class FiascoSolver extends JFrame implements Runnable, WindowListener {
 
        view.printStringLn("Solver finished");
        ((AssemblingPanel)view.getPanel(Defs.ASSEMBLING)).loadOutput();
+       
+       this.dispose();
         
     }
     
@@ -87,6 +90,8 @@ public class FiascoSolver extends JFrame implements Runnable, WindowListener {
     public void windowClosing(WindowEvent e) {
         running = false;
         p.destroy();
+        setVisible(false);
+        dispose();
     }
     @Override
     public void windowOpened(WindowEvent e) {}

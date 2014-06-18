@@ -107,7 +107,27 @@ public class Utilities{
         //          + "background labels black; axes molecular; axes on; ";
         cmd = cmd + Defs.COMMAND_PREPARE_STRUCURE_BASE 
                   + "select */" + numStructure + "; background hover red; "
-                  + "background labels black; ";
+                  + "background labels black; set allowMoveAtoms TRUE;"
+                  + "set allowModelKit TRUE; set dynamicMeasurements ON; "
+                  + "set allowRotateSelected TRUE; ";
+        
+        /* Display all the fragments */
+            //cmd = cmd + "frame all; select *; center; ";
+        /* Return string */
+        return cmd;
+    }//prepareStructureString
+    
+    public static String prepareStructureString(){
+        String cmd;
+        //cmd = cmd + Defs.COMMAND_PREPARE_STRUCURE_BASE 
+        //          + "select */" + numStructure + "; background hover red; "
+        //          + "background labels black; axes molecular; axes on; ";
+        cmd = Defs.COMMAND_PREPARE_STRUCURE_BASE 
+                + " background hover red; background labels black;"
+                + " set allowMoveAtoms TRUE; set allowModelKit TRUE;"
+                + " set dynamicMeasurements ON; set allowRotateSelected TRUE; "
+                + " axes on; center; ";
+
         /* Display all the fragments */
             //cmd = cmd + "frame all; select *; center; ";
         /* Return string */
@@ -286,7 +306,7 @@ public class Utilities{
         howMuchReplaced = 0;
         
         /* Strings start at position 0! */
-        offset = offset - 1;
+        //offset = offset - 1;
         
         /* Check the offset and, in case, replace with the substring's chars */
         for(int i = 0; i < baseLength; i++){
@@ -296,7 +316,6 @@ public class Utilities{
             }else
                outputString = outputString + baseChar[i]; 
         }
-        
         /* Return output */
         return outputString;
     }//replaceSubstring
@@ -349,15 +368,17 @@ public class Utilities{
               + ".CA and */" + to.getParameters()[Defs.FRAGMENT_NUM]
               + ") COLOR red DIAMETER 4 TRANSLUCENT; ";
         
+        /* Print connection line*/
+        //System.out.println(cmd);
+        
         /* Return command line */
-        System.out.println("************************" + cmd);
         return cmd;
     }//drawConnectionString
     
     public static String deleteConnectionString(int frgsA){
         String cmd = "";
-        for(int i=0;i<frgsA;i++){
-            cmd = cmd + "delete $ connectLine" + (i+1) + " ; ";
+        for(int i=1;i<frgsA;i++){
+            cmd = cmd + "delete $ connectLine" + i + " ; ";
         }
         return cmd;
     }
@@ -411,5 +432,7 @@ public class Utilities{
         return colors[--group];
         
     }//getGroupColor
+    
+    
     
 }//Utilities
