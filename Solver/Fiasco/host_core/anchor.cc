@@ -204,9 +204,15 @@ Anchor::is_within_distance_of (const Anchor& other, real eps) const {
 
 bool 
 Anchor::is_within_bounds_of (const Anchor& other, real eps) const {
-  return ( Math::in_range (get_C(), other.get_C_bounds(), eps) &&
-	   Math::in_range (get_O(), other.get_O_bounds(), eps) &&
-	   Math::in_range (get_N(), other.get_N_bounds(), eps));
+  
+  return ( Math::in_range (get_C(), other.get_C_bounds().first, other.get_C_bounds().second, eps) &&
+           Math::in_range (get_O(), other.get_O_bounds().first, other.get_O_bounds().second, eps) &&
+           Math::in_range (get_N(), other.get_N_bounds().first, other.get_N_bounds().second, eps));
+  
+  
+//  return ( Math::in_range (get_C(), other.get_C_bounds(), eps) &&
+//	   Math::in_range (get_O(), other.get_O_bounds(), eps) &&
+//	   Math::in_range (get_N(), other.get_N_bounds(), eps));
 }
 //-
 
