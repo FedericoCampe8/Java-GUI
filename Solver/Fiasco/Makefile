@@ -63,6 +63,7 @@ LINKOPT =
 ## debug, don't optimize 
 # -std=gnu++0x -std=c++0x -Wstatic-float-init
 CCOPT   += -m64 -DIL_STD
+CCOPT   += -std=c++0x   # Prior to C++11 for constexpr issue
 
 ## debug, optimize
 ## use --ptxas-options=-v for cuda (verbose for each kernel)
@@ -96,3 +97,5 @@ $(OBJECTS): %.o: %.cc
 
 clean:
 	rm -f obj/host_core/*.o
+	rm -f obj/fiasco.o
+	rm  $(MAIN) \

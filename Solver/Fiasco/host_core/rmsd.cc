@@ -28,8 +28,8 @@ void Rmsd::alloc(int size) {
 }//-
 
 void Rmsd::dealloc() {
-  delete tertiary_compare_1;
-  delete tertiary_compare_2;
+  delete [] tertiary_compare_1;
+  delete [] tertiary_compare_2;
 }//-
 
 // FRAG

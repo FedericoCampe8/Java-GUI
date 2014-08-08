@@ -23,7 +23,7 @@ Bitset::operator= (const Bitset& other) {
   
 size_t 
 Bitset::count (bool b) const {
-  register size_t ct = 0;
+  size_t ct = 0;
   for (size_t i=0; i<bitmask.size(); i++)
     ct += (bitmask[i] == b) ? 1 : 0;
   return ct;

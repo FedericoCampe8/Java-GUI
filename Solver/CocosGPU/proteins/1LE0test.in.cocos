@@ -1,0 +1,8 @@
+% Database information
+COULOMBPAR  ../../config/coulomb.csv
+LJPARAMETER ../../config/lenard_jones.csv
+HDPARAMETER ../../config/h_distances.csv
+HAPARAMETER ../../config/h_angles.csv
+% Proteins Information
+TARGET_PROT ./1LE0test
+KNOWN_PROT  ./1LE0test

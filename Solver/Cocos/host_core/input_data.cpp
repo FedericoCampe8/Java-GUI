@@ -190,7 +190,6 @@ Input_data::create_input_file () {
       if (buffer.length() != 0){
         if (buffer.compare( 0, 1, ">" ) != 0 ){
           line_fasta = buffer;
-          cout << " LINE_FASTA " << line_fasta << " " << endl;
           break;
         }
       }

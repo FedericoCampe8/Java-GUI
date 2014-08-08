@@ -94,23 +94,23 @@ BundleConstraint::propagate (int trailtop) {
       memcpy(ol, p->lower_bound, sizeof(point));
       memcpy(oh, p->upper_bound, sizeof(point));
 
-#ifdef FALSE      
+//#ifdef FALSE
       /* Set bounds for the first three points of f2 */
       if (!use_bidirectional && i < 3) {
 	point u, l;
 	real epsilon;
 	switch (i) {
 	case 0:
-	  epsilon = cC + cO + cN; // C'
+	  epsilon = (cC + cO + cN)*4; // C'
 	  break;
 	case 1:
-	  epsilon = cO + cN; // O
+	  epsilon = (cO + cN)*3; // O
 	  break;
 	case 2:
-	  epsilon = cN; // N
+	  epsilon = cN*2; // N
 	  break;    
 	default:
-	  epsilon = (3-i)*0.2;
+	  epsilon = (3-i)*0.8;//(3-i)*0.2;
 	  break;
 	}//switch
         
@@ -118,14 +118,17 @@ BundleConstraint::propagate (int trailtop) {
 	Math::vadd(f_ng.backbone[i].position, epsilon, u);
 	Math::vsub(f_ng.backbone[i].position, epsilon, l);
 	p->intersect_box (l, u);
-      } else {
-#endif
-	//NB: Se è bisection allora metto a ground i punti anche alla fine
+      }
+      else {
+        
+//#endif
+        
 	p->set_ground(f_ng.backbone[i]);
 	p->set_last_trailed (trailtop); // save current-state
-	// std::cout << dbg << "Set VP_" << p->idx() 
-	// 	  << " last trailed: " << trailtop << std::endl;
-	//      }
+        
+//#ifdef FALSE
+	      }
+//#endif
       
       p->in_var_fragment(f_ng.get_id());
       

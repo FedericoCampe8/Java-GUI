@@ -7,7 +7,7 @@ HAPARAMETER config/h_angles.csv
 CONTACT     config/contact.csv
 TORSPAR     config/table_corr.pot
 % Proteins Information
-TARGET_PROT proteins/1ENH.cocos
-KNOWN_PROT  proteins/1ENH.cocos
-CONSTRAINTS proteins/1ENH.in.con
-FRAG_SEC_FL proteins/1ENH.in.pdb
+TARGET_PROT ../proteins/1ENH.cocos
+KNOWN_PROT  ../proteins/1ENH.cocos
+CONSTRAINTS ../proteins/1ENH.in.con
+FRAG_SEC_FL ../proteins/1ENH.in.pdb

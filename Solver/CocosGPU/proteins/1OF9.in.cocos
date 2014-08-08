@@ -1,0 +1,23 @@
+% Database information
+COULOMBPAR  config/coulomb.csv
+LJPARAMETER config/lenard_jones.csv
+HDPARAMETER config/h_distances.csv
+HAPARAMETER config/h_angles.csv
+CONTACT	    config/contact.csv
+TORSPAR     config/table_corr.pot
+ANGLES      config/3combination
+% Proteins Information
+TARGET_PROT proteins/1OF9
+KNOWN_PROT  proteins/1OF9
+% Structure Agents definition
+% Types: 
+% H - alpha helix
+% T - beta turn
+% E - beta strand
+% P - polyproline II
+% C - coil
+H 4 17
+H 24 34
+H 42 51
+H 53 62
+H 66 73

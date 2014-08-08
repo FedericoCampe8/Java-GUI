@@ -216,7 +216,7 @@ Atom::compute_cg(const char a, const point &ca1, const point &ca2,
   R_MAT R;
   real chi2, tors, dist, x;
   int i;
-  register real D, Dx, Dy, Dz;
+  real D, Dx, Dy, Dz;
   // Placement of the centroid using dist, chi2, e tors
   chi2 = centroid_chi2 (a);
   tors = centroid_torsional_angle (a);

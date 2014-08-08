@@ -70,7 +70,7 @@ namespace Utilities{
   void dump(const std::vector<int> n);
   void dump(const std::vector<int> v, int s, int e);
   void dump(const std::vector<bool> v, int s, int e);
-  void dump(const std::vector<aminoacid> v, int s, int e);
+  //void dump(const std::vector<aminoacid> v, int s, int e);
   void dump(const R_MAT r);
 
   atom_type  get_atom_type(uint bbidx);

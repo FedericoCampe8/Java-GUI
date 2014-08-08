@@ -361,16 +361,17 @@ Utilities::dump(const std::vector<bool> v, int s, int e) {
   cout << endl;
 }//-
 
+/*
 void 
-Utilities::dump(const std::vector<aminoacid> v, int s, int e) {
+Utilities::dump ( const std::vector<aminoacid> v, int s, int e ) {
   for (int i=s; i<e; i++) {
     cout << v[i];
-    if (v[i]>=0 && v[i]<10) cout <<"   ";
-    else if (v[i]>=10 && v[i]<100) cout <<"  ";
+    if ( v[i] >= 0 && v[i] < 10 ) cout <<"   ";
+    else if ( v[i] >= 10 ) cout <<"  ";
   }
   cout << endl;
 }//-
-
+*/
 
 void 
 Utilities::init_file(string outf) {

@@ -74,14 +74,14 @@ int main (int argc, char* argv[]) {
   
   // FIX THIS PART BELOW
   // set AA start and end positions of RIGID BLOCKS
-  for (uint i=0; i<g_logicvars->var_fragment_list.size(); i++)  {
-    VariableFragment *VF = &g_logicvars->var_fragment_list[i];
-    for (uint ii=0; ii < VF->domain_size(); ii++)
-      if (VF->domain[ii].get_type() == special) {
-        bundle_fragments.push_back(VF);
+  for ( uint i = 0; i < g_logicvars->var_fragment_list.size(); i++ )  {
+    VariableFragment *VF = &g_logicvars->var_fragment_list[ i ];
+    for ( uint ii=0; ii < VF->domain_size(); ii++ )
+      if ( VF->domain[ii].get_type() == special ) {
+        bundle_fragments.push_back ( VF );
         uint aa_s = VF->domain[0].get_aa_s();
         uint aa_e = VF->domain[0].get_aa_e();
-        aas_and_aae_of_rigid_blocks.push_back (make_pair (aa_s, aa_e));
+        aas_and_aae_of_rigid_blocks.push_back ( make_pair (aa_s, aa_e) );
         break;
       }
   }
@@ -100,7 +100,7 @@ int main (int argc, char* argv[]) {
   // Set this other loop for our convenience. This will be only used to print the
   // flexible part of the protein, untill the end
   g_target.set_loop ( flexible_sequence_bbs-8, flexible_sequence_bbe+8, "flexible_chain_to_print" );
-  g_statistics->new_loop_search_space (flexible_sequence_aas, flexible_sequence_aae);
+  g_statistics->new_loop_search_space ( flexible_sequence_aas, flexible_sequence_aae );
   
   
   // ---------------------------------------------------------------
@@ -142,22 +142,35 @@ int main (int argc, char* argv[]) {
 			      &g_logicvars->var_point_list[bb3]);
   }
 #ifdef FALSE
-
   // Ditance Constraints 
   parse_pos = 0;
   while (parse_pos >= 0)
     DistanceLEQConstraint *leq = 
       new DistanceLEQConstraint(argc, argv, parse_pos);
-
+#endif
   
-
+#ifdef FALSE
+  
+  // Boundle Constraint
+  domain_frag_info VF_mate;
+  VF_mate.frag_mate_info.push_back ( make_pair ( aas_and_aae_of_rigid_blocks[1].first, 0 ) );
+  VF_mate.explored = false;
+  VF_mate.frag_mate_idx = 0;
+  
+  bundle_fragments[ 0 ]->domain_info[0] = VF_mate;
+  Math::set_identity ( bundle_fragments[0]->domain[0].rot_m );
+  Math::set_identity ( bundle_fragments[0]->domain[0].shift_v );
+  
+  BundleConstraint *cb = new BundleConstraint
+  ( make_pair ( bundle_fragments[ 0 ], bundle_fragments[ 1 ] ), make_pair(0, 0) );
+  //-
   
 #endif
   
   // Ellipsoid Constraint
   parse_pos = 0;
   while (parse_pos >= 0)
-    EllipsoidConstraint *ce = 
+    EllipsoidConstraint *ce =
       new EllipsoidConstraint (argc, argv, parse_pos, 
   			       rot_mat_ori_system, sh_vec_ori_system);
 
@@ -216,8 +229,9 @@ int main (int argc, char* argv[]) {
   //if (g_statistics)  delete g_statistics;
   if (search_engine) delete search_engine;
   for (uint i = 0; i < g_constraints.size(); i++)
-    if (g_constraints[i]) 
-      delete g_constraints[i];
+    if (g_constraints[i]){
+      //delete g_constraints[i];
+    }
   cout << dbg << "Flush memory\n";
   cout << dbg << "Exit from FIASCO\n";
   return 0;

@@ -29,10 +29,10 @@ Math::deg_to_rad (real angle) {
 // Compute the distance from the current point to previous point (left hand size points)
  void 
 Math::distance(real *X, real *distance, const int pos){
-  register int CurrentCol;
-  register int CurrentPos;
-  register real dx,dy,dz;
-  register int N;
+  int CurrentCol;
+  int CurrentPos;
+  real dx,dy,dz;
+  int N;
   N = 3 * pos;
   for (CurrentCol = 0 ; CurrentCol < pos ; CurrentCol ++){
     CurrentPos = CurrentCol * 3;
@@ -46,8 +46,8 @@ Math::distance(real *X, real *distance, const int pos){
 // Find the minimum distance from a point to other points
 real 
 Math::amin(const int N, const real *distance){
-  register real mindis = distance[0];
-  register int ii;
+  real mindis = distance[0];
+  int ii;
   for (ii = 1 ; ii < N ;){
     (mindis > distance[ii]) ? (mindis = distance[ii] , ii++) : (ii++);
   }
@@ -57,8 +57,8 @@ Math::amin(const int N, const real *distance){
 // the maximum value of distance
 real 
 Math::amax(const int N, const real *distance) {
-  register real maxdis = distance[0];
-  register int ii;
+  real maxdis = distance[0];
+  int ii;
   for (ii = 1 ; ii < N ;){
     (maxdis < distance[ii]) ? ( maxdis = distance[ii] , ii++) : (ii++);
   }
@@ -128,18 +128,18 @@ Math::rotate_inverse(point& p, const R_MAT& rot_m) {
 //Calculate the eucleudian distance between two vectors
 real 
 Math::eucl_dist (point v1, point v2) {
-  register real x = v1[0] - v2[0];
-  register real y = v1[1] - v2[1];
-  register real z = v1[2] - v2[2];
+  real x = v1[0] - v2[0];
+  real y = v1[1] - v2[1];
+  real z = v1[2] - v2[2];
   return sqrt (x*x + y*y + z*z);
 }//-
 
 // Squared eucleudian distance 
 real 
 Math::eucl_dist2 (point v1, point v2) {  
-  register real x = v1[0] - v2[0];
-  register real y = v1[1] - v2[1];
-  register real z = v1[2] - v2[2];
+  real x = v1[0] - v2[0];
+  real y = v1[1] - v2[1];
+  real z = v1[2] - v2[2];
   return (x*x + y*y + z*z);
 }//-
 
@@ -157,7 +157,7 @@ Math::vnorm22(const vec3& x) {
 // Normalize a given vector by its Frobenius norm
 int 
 Math::vnorm(real *x) {
-  register real scale = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+  real scale = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
   if (scale > 0){
     x[0] /= scale; // x[0] = (x[0] < 0.00001 && x[0] > 0.0001) ? 0.0 : x[0];
     x[1] /= scale; // x[0] = (x[1] < 0.00001 && x[1] > 0.0001) ? 0.0 : x[1];

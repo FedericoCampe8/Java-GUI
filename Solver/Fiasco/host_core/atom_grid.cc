@@ -162,7 +162,7 @@ AtomGrid::convert_cell_to_key(int x, int y, int z) {
 
 size_t
 AtomGrid::convert_pos_to_key(point p) {
-  register int x,y,z;
+  int x,y,z;
   x=(int)floor(p[0]/grid_side);
   y=(int)floor(p[1]/grid_side);
   z=(int)floor(p[2]/grid_side);

@@ -108,11 +108,11 @@ struct cmp_linked_anchor_id
       int lhs_id = lhs->representative.of_fragment()->get_id();
       int rhs_id = rhs->representative.of_fragment()->get_id();
       if (lhs_id != rhs_id) {
-	return lhs_id < lhs_id;
+        return lhs_id < rhs_id;
       }
       else {
-	lhs = lhs->parent;
-	rhs = rhs->parent;
+        lhs = lhs->parent;
+        rhs = rhs->parent;
       }
     }
     

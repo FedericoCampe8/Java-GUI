@@ -24,11 +24,11 @@ struct AtomGridCell {
 
 class AtomGrid {
  private:
-  static const int grid_side = 3; // the grid side (in Angstrom)
-  static const int grid_edge = 128;
+  static constexpr int grid_side = 3; // the grid side (in Angstrom)
+  static constexpr int grid_edge = 128;
   int grid_max_dist;
-  static const real prot_Ca_Ca = 3.2; //static constexpr
-  static const real prot_Cg_Cg = 1.0; //static constexpr
+  static constexpr real prot_Ca_Ca = 3.2; //static constexpr
+  static constexpr real prot_Cg_Cg = 1.0; //static constexpr
 
   // converts cell coordinates to linear index
   size_t convert_cell_to_key(int x, int y, int z);
