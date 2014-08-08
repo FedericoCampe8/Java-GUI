@@ -98,4 +98,4 @@ $(OBJECTS): %.o: %.cc
 clean:
 	rm -f obj/host_core/*.o
 	rm -f obj/fiasco.o
-	rm  $(MAIN) \
+	rm  $(MAIN)

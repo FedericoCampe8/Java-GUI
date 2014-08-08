@@ -87,3 +87,4 @@ $(OBJECTS): %.o: %.cpp
 clean:
 	rm -f obj/host_core/*.o
 	rm -f obj/cocos.o
+	rm  $(MAIN)
