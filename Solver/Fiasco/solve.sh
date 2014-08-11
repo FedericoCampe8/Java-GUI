@@ -1,13 +1,11 @@
-BASEDIR=/home/matteo/NetBeansProjects/jafatt/Solver
+BASEDIR=/home/matteo/Desktop/Java-GUI/Solver
 
 $BASEDIR/Fiasco/fiasco \
-    --input ../proteins/1ZDD.in.fiasco \
-    --outfile ../proteins/1ZDD.out.pdb \
-    --domain-size 10 \
+    --input ../proteins/1NIZ.in.fiasco \
+    --outfile ../proteins/1NIZ.out.pdb \
+    --domain-size 100 \
     --ensembles 1000000 \
     --timeout-search 60 \
     --timeout-total 120 \
-    --distance-leq 3 28 1 \
-    --distance-leq 11 18 1 \
-    --distance-leq 28 3 6.5738773 \
-    --distance-leq 18 11 17.434011 \
+    --distance-leq 5 9 8.082712 \
+    --distance-leq 2 12 11.797802 \

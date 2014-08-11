@@ -1,13 +1,7 @@
 % Database information
 FRAGMENTDB  DB/loopdb.dat
-COULOMBPAR  config/coulomb.csv
-LJPARAMETER config/lenard_jones.csv
-HDPARAMETER config/h_distances.csv
-HAPARAMETER config/h_angles.csv
-CONTACT     config/contact.csv
-TORSPAR     config/table_corr.pot
 % Proteins Information
-TARGET_PROT proteins/1NIZ
-KNOWN_PROT  proteins/1NIZ
-CONSTRAINTS proteins/1NIZ.in.con
-FRAG_SEC_FL proteins/1NIZ.in.pdb
+TARGET_PROT ../proteins/1NIZ.cocos
+KNOWN_PROT  ../proteins/1NIZ.cocos
+CONSTRAINTS ../proteins/1NIZ.in.con
+FRAG_SEC_FL ../proteins/1NIZ.in.pdb
