@@ -43,7 +43,7 @@ Note: If the compile process doesn't work try to compile the solver on your own.
 If you want to compile the CocosGPU Sover too, then type in 
 
 - cd Solver
-- cd Solver/CocosGPGU
+- cd Solver/CocosGPU
 - ./CompileAndRun.sh
 - cd ..
 
