@@ -1,7 +1,0 @@
-% Database information
-FRAGMENTDB  DB/loopdb.dat
-% Proteins Information
-TARGET_PROT ../proteins/AAAA.cocos
-KNOWN_PROT  ../proteins/AAAA.cocos
-CONSTRAINTS ../proteins/AAAA.in.con
-FRAG_SEC_FL ../proteins/AAAA.in.pdb
