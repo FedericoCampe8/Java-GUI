@@ -58,7 +58,6 @@ LogicVariables::populate_logic_variables () {
 void
 LogicVariables::populate_point_variables () {
   Utilities::print_debug ( _dbg, "Populate Point Vars" );
-  
   assert ( cp_variables.size() > 0 );
   int num_points = cp_variables.size() * 5;
   point* cp_structure_aux = new point[ num_points ];
@@ -122,6 +121,17 @@ LogicVariables::populate_point_variables () {
     cp_structure[ i*3 + 1 ] = cp_structure_aux[ i ][ 1 ];
     cp_structure[ i*3 + 2 ] = cp_structure_aux[ i ][ 2 ];
   }
+  
+  if ( gh_params.translate_str ) {
+    Utilities::translate_structure ( cp_structure,
+                                     gh_params.translation_point[ 0 ], // Atom reference
+                                     gh_params.translation_point[ 1 ], // x
+                                     gh_params.translation_point[ 2 ], // y
+                                     gh_params.translation_point[ 3 ], // z
+                                     num_points );                     // len
+  }
+  
+  //print_point_variables();
   
   delete [] cp_structure_aux;
   delete [] right_points;
@@ -217,11 +227,27 @@ void
 LogicVariables::print_point_variables ( int start_aa, int end_aa ) {
   int len = (end_aa - start_aa) * 5;
   point* cp_structure_aux = new point[ len ];
+  
+  real translation_vector[ 3 ];
+  translation_vector[ 0 ] = cp_structure[ 1*3 + 0 ] * gh_params.translate_str_fnl;
+  translation_vector[ 1 ] = cp_structure[ 1*3 + 1 ] * gh_params.translate_str_fnl;
+  translation_vector[ 2 ] = cp_structure[ 1*3 + 2 ] * gh_params.translate_str_fnl;
+  
+  if ( gh_params.translate_str_fnl ) {
+    Utilities::translate_structure ( cp_structure,
+                                     1,      // Atom reference
+                                     0,      // x
+                                     0,      // y
+                                     0,      // z
+                                     len );  // len
+  }
+  
   for (int i = start_aa; i < len; i++) {
     cp_structure_aux[ i ][ 0 ] = cp_structure[ i*3 + 0 ];
     cp_structure_aux[ i ][ 1 ] = cp_structure[ i*3 + 1 ];
     cp_structure_aux[ i ][ 2 ] = cp_structure[ i*3 + 2 ];
   }
+  
   string out_string = Utilities::output_pdb_format ( cp_structure_aux, len );
   /// Print on std ouput
   if ( gh_params.output_file.compare( "" ) == 0 ) {

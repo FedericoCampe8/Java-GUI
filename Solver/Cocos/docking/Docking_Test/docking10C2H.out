@@ -1,0 +1,82 @@
+#log: Main - Initialize Data...
+#log: Input_data - Native Protein global minimum: 0.198793
+#log: Main - Generating Logic Variables...
+#log: Main - Setting Constraints on Variables...
+Sang/Rang/Mang constraint set... 
+All_distant constraint set... 
+Atom_Grid constraint set... 
+#log: Main - Start Search...
+FORCE LABELING
+FORCE LABELING
+FORCE LABELING
+7221 solutions in 0.238435 sec.
+6607 solutions in 0.319378 sec.
+8067 solutions in 0.365755 sec.
+189 solutions in 0.0339489 sec.
+5152 solutions in 0.292048 sec.
+386 solutions in 0.0252049 sec.
+5061 solutions in 0.336197 sec.
+282 solutions in 0.0307322 sec.
+5084 solutions in 0.152129 sec.
+976 solutions in 0.0256462 sec.
+8147 solutions in 0.354596 sec.
+342 solutions in 0.0327358 sec.
+1405 solutions in 0.147301 sec.
+210 solutions in 0.0256228 sec.
+3670 solutions in 0.187477 sec.
+32 solutions in 0.032366 sec.
+10378 solutions in 0.507971 sec.
+140 solutions in 0.032836 sec.
+3750 solutions in 0.185652 sec.
+71 solutions in 0.0365129 sec.
+11639 solutions in 0.403005 sec.
+364 solutions in 0.025265 sec.
+6656 solutions in 0.299061 sec.
+330 solutions in 0.031749 sec.
+3588 solutions in 0.154711 sec.
+2896 solutions in 0.271344 sec.
+109 solutions in 0.020963 sec.
+4837 solutions in 0.340898 sec.
+100 solutions in 0.0335679 sec.
+3469 solutions in 0.305256 sec.
+107 solutions in 0.0312281 sec.
+2501 solutions in 0.189197 sec.
+7451 solutions in 0.323068 sec.
+94 solutions in 0.0339129 sec.
+1932 solutions in 0.198509 sec.
+2163 solutions in 0.255261 sec.
+575 solutions in 0.0317781 sec.
+388 solutions in 0.0279682 sec.
+841 solutions in 0.170321 sec.
+3639 solutions in 0.202815 sec.
+11251 solutions in 0.361978 sec.
+205 solutions in 0.022722 sec.
+3401 solutions in 0.162291 sec.
+1515 solutions in 0.153923 sec.
+164 solutions in 0.025388 sec.
+372 solutions in 0.022382 sec.
+5038 solutions in 0.262508 sec.
+307 solutions in 0.0257809 sec.
+10555 solutions in 0.445367 sec.
+24 solutions in 0.0348949 sec.
+7159 solutions in 0.370038 sec.
+0 solutions in 0.0353689 sec.
+4087 solutions in 0.187904 sec.
+6768 solutions in 0.38513 sec.
+22 solutions in 0.033917 sec.
+4169 solutions in 0.315709 sec.
+92 solutions in 0.0319149 sec.
+2806 solutions in 0.256515 sec.
+7015 solutions in 0.346256 sec.
+16 solutions in 0.0339189 sec.
+5710 solutions in 0.248458 sec.
+5885 solutions in 0.224133 sec.
+5104 solutions in 0.358118 sec.
+26 solutions in 0.0325179 sec.
+Total of 64 seeds and 202752 solutions
+#log: Main - ...end Search
+#log: Main - Energy     : -20
+#log: Main - Search time: 11.0907 sec.
+#log: Main - Freeing memory
+#log: Main - Memory freed.
+#log: Main - Exit from COCOS... 

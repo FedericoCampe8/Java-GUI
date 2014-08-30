@@ -30,6 +30,7 @@ HEADERS_CORE=alldistant_constraint.h\
 	k_medoids.h\
 	logic_variables.h\
 	mathematics.h\
+	energy.h\
 	output.h\
 	protein.h\
 	r_cluster.h\
@@ -63,7 +64,7 @@ LINKOPT =
 ## debug, don't optimize 
 # -std=gnu++0x -std=c++0x -Wstatic-float-init
 CCOPT   += -m64 -DIL_STD
-CCOPT   += -std=c++0x   # Prior to C++11 for constexpr issue
+CCOPT   += -std=c++0x # Prior to C++11 for constexpr issue
 
 ## debug, optimize
 ## use --ptxas-options=-v for cuda (verbose for each kernel)

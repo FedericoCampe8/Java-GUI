@@ -113,6 +113,20 @@ ICM::worker_selection () {
 
 void
 ICM::search () {
+  do {
+#ifdef ICM_DEBUG
+    static int n_iteration = 0;
+    cout << _dbg << "Iteration n_" << ++n_iteration << "\n";
+#endif
+    
+    reset_iteration ();
+    icm_search ();
+    
+  } while ( is_changed() );
+}//search
+
+void
+ICM::icm_search () {
 #ifdef ICM_DEBUG
   cout << _dbg << " Start search...\n";
 #endif
@@ -144,7 +158,7 @@ ICM::search () {
 
 void
 ICM::force_label () {
-  cout << "FORCE LABELING" << endl;
+  //cout << "FORCE LABELING" << endl;
   WorkerAgent* w;
   /// Find the first not labeled var
   for (int i = 0; i <= _n_vars; i++) {
@@ -154,7 +168,8 @@ ICM::force_label () {
       //cout << Utilities::output_pdb_format( gd_params.curr_str ) << endl;
       
       cout << "BACKTRACK NEEDED!!!" << endl;
-      exit( 2 );
+      return;
+      //exit( 2 );
     }
     if ( !_labeled_vars[ i ] ) {
       _wrks_it = _wrks->begin();
@@ -207,27 +222,13 @@ ICM::choose_label ( WorkerAgent* w ) {
   " # of blocks " << n_blocks << 
   " # of threads " << n_threads << endl;
 #endif
-  if (gh_params.follow_rmsd) {
-    int num_of_res = _mas_scope_second - _mas_scope_first + 1;
-    Rmsd_fast::get_rmsd( gd_params.beam_str, gd_params.beam_energies,
-                        gd_params.validity_solutions, gd_params.known_prot,
-                        num_of_res, _mas_scope_first, _mas_scope_second,
-                        n_blocks );
-  }
-  else {
-  get_energy( gd_params.beam_str, gd_params.beam_energies,
-              gd_params.validity_solutions,
-              gd_params.secondary_s_info,
-              gd_params.h_distances, gd_params.h_angles,
-              gd_params.contact_params, gd_params.aa_seq,
-              gd_params.tors, gd_params.tors_corr,
-              _energy_weights[ f_hydrogen ],
-              _energy_weights[ f_contact ],
-              _energy_weights[ f_correlation ],
-              _mas_bb_start, _mas_bb_end,
-              gh_params.n_res, _mas_scope_first, _mas_scope_second,
-              smBytes, n_blocks, n_threads );
-  }
+  /// Calculate energies on the set of structures
+  _energy_function->calculate_energy ( gd_params.beam_str, gd_params.beam_energies,
+                                       gd_params.validity_solutions, gh_params.n_res,
+                                       _mas_bb_start, _mas_bb_end,
+                                       _mas_scope_first, _mas_scope_second,
+                                       smBytes, n_blocks, n_threads );
+  
   /// Copy Energy Values
   memcpy ( gh_params.beam_energies, gd_params.beam_energies, n_blocks * sizeof( real ) );
   
@@ -237,12 +238,14 @@ ICM::choose_label ( WorkerAgent* w ) {
       best_label = i;
       truncated_number =  Math::truncate_number( gh_params.beam_energies[ best_label ] );
     }
+    //cout << "E: " << gh_params.beam_energies[ i ] << endl;
   }
  
 #ifdef ICM_DEBUG
   cout << _dbg << "V_" << v_id << " Best label " << best_label << " Best energy "<< std::setprecision(10) <<
   gh_params.beam_energies[ best_label ] <<
   " Local minimum " << _local_minimum << "\n";
+  getchar();
 #endif
   
   if ( gh_params.beam_energies[ best_label ] < _local_minimum ) {

@@ -366,3 +366,254 @@ Math::set_reference_system (point a, point b, point c) {
   
   return R;
 }//-
+
+
+real
+Math::bond_angle ( real* a, real* b, real* c ) {
+  real a_vec[3];
+  real b_vec[3];
+  vsub( a, c, a_vec );
+  vsub( b, c, b_vec );
+  
+  real div = vdot ( a_vec, b_vec ) / ( eucl_dist(a, c) * eucl_dist(b, c) );
+  if ( div < -1 ) return 180.0;
+  if ( div > 1 )  return 0;
+  return acos ( div ) * 180.0 / _pi;
+}//bond_angle
+
+real
+Math::torsion_angle ( real* a, real* b, real* c, real* d ) {
+  real ab[3];
+  real cb[3];
+  real bc[3];
+  real dc[3];
+  real abc[3];
+  real bcd[3];
+  vsub( a, b, ab );
+  vsub( c, b, cb );
+  vsub( b, c, bc );
+  vsub( d, c, dc );
+  
+  vcross ( ab, cb, abc );
+  vcross ( bc, dc, bcd );
+  
+  real angle = vdot( abc, bcd ) / ( sqrt( vdot( abc, abc ) ) *
+                                   sqrt( vdot( bcd, bcd ) ) );
+  
+  if ( angle < -1 ) angle = -1;
+  if ( angle > 1 )  angle = 1;
+  
+  if (angle == -1) angle = 180.0;
+  else angle = ( acos ( angle ) ) * 180.0 / _pi;
+  
+  /// --- Here it is possible to return angle without sign ---
+  
+  // Calc the sign
+  real vec_prod[3];
+  vcross ( abc, bcd, vec_prod );
+  real val = vdot( cb, vec_prod );
+  //if ( fabs( val ) < CLOSE_TO_ZERO_VAL  ) val = 0.0;
+  if ( val < close_to_zero_val ) val = 0.0;
+  if ( val < 0.0 ) angle *= -1;
+  
+  return angle;
+}//torsion_angle
+
+void
+Math::calculate_h_atom (const real *c,
+                        const real *n,
+                        const real *ca,
+                        real *h) {
+  vec3 nc, nca, added, added2;
+  vsub(c, ca, nc);
+  vsub(ca, n, nca);
+  vcross (nc, nca, added);
+  vcross (added, nc, added2);
+  vnorm (added2);
+  vsub (n, added2, h);
+}//calculate_h_atom
+
+void
+Math::calculate_cg_atom ( aminoacid a,
+                              real* ca1, real* ca2, real* ca3,
+                              real* cg, int* radius ) {
+  /// Placement of the centroid using dist, chi2, e tors
+  /// v1 is the normalized vector w.r.t. ca1, ca2
+  real v1[3];
+  vsub ( ca2, ca1, v1 );
+  vnorm ( v1 );
+  
+  /// v2 is the normalized vector w.r.t. ca2, ca3
+  real v2[3];
+  vsub ( ca3, ca2, v2 );
+  vnorm ( v2 );
+  
+  /// Compute v1 (subtracting the component along v2)
+  /// in order to obtain v1 and v2 orthogonal each other
+  real x = vdot ( v1, v2 );
+  v1[ 0 ] = v1[ 0 ] - x * v2[ 0 ];
+  v1[ 1 ] = v1[ 1 ] - x * v2[ 1 ];
+  v1[ 2 ] = v1[ 2 ] - x * v2[ 2 ];
+  vnorm ( v1 );
+  
+  /// Compute v3 orthogonal to v1 and v2
+  real v3[3];
+  vcross ( v1, v2, v3 );
+  
+  /// Using Cramer method
+  real factor;
+  real b[3];
+  real R[3][3];
+  real D, Dx, Dy, Dz;
+  real tors   = centroid_torsional_angle ( a ) * _pi/180;
+  b[0] = cos( (centroid_chi2 ( a )) * _pi/180 );
+  factor = sqrt( 1 - ( b[0] * b[0] ) );
+  b[1] = sin( tors ) * factor ;
+  b[2] = cos( tors ) * factor ;
+  
+  R[0][0] = v2[0];
+  R[0][1] = v2[1];
+  R[0][2] = v2[2];
+  
+  R[1][0] = v3[0];
+  R[1][1] = v3[1];
+  R[1][2] = v3[2];
+  
+  R[2][0] = -v1[0];
+  R[2][1] = -v1[1];
+  R[2][2] = -v1[2];
+  
+  D =
+  R[0][0] * R[1][1] * R[2][2] +
+  R[0][1] * R[1][2] * R[2][0] +
+  R[0][2] * R[1][0] * R[2][1] -
+  R[0][2] * R[1][1] * R[2][0] -
+  R[0][1] * R[1][0] * R[2][2] -
+  R[0][0] * R[1][2] * R[2][1];
+  Dx =
+  b[0] * (R[1][1] * R[2][2] - R[1][2] * R[2][1]) +
+  b[1] * (R[2][1] * R[0][2] - R[2][2] * R[0][1]) +
+  b[2] * (R[0][1] * R[1][2] - R[0][2] * R[1][1]) ;
+  Dy =
+  b[0] * (R[1][2] * R[2][0] - R[1][0] * R[2][2]) +
+  b[1] * (R[2][2] * R[0][0] - R[2][0] * R[0][2]) +
+  b[2] * (R[0][2] * R[1][0] - R[0][0] * R[1][2]) ;
+  Dz =
+  b[0] * (R[1][0] * R[2][1] - R[1][1] * R[2][0]) +
+  b[1] * (R[2][0] * R[0][1] - R[2][1] * R[0][0]) +
+  b[2] * (R[0][0] * R[1][1] - R[0][1] * R[1][0]) ;
+  
+  real v[3];
+  v[ 0 ] = Dx/D;
+  v[ 1 ] = Dy/D;
+  v[ 2 ] = Dz/D;
+  
+  /// Now compute centroids coordinates
+  v[ 0 ] = centroid_distance( a ) * v[ 0 ];
+  v[ 1 ] = centroid_distance( a ) * v[ 1 ];
+  v[ 2 ] = centroid_distance( a ) * v[ 2 ];
+  
+  // Update the output
+  vadd ( v, ca2, cg );
+  *radius = centroid_radius( a );
+}//calculate_cg_atom
+
+real
+Math::centroid_torsional_angle ( aminoacid a ) {
+  if (a==ala) return -138.45;
+  if (a==arg) return -155.07;
+  if (a==asn) return -144.56;
+  if (a==asp) return -142.28;
+  if (a==cys) return -142.28;
+  if (a==gln) return -149.99;
+  if (a==glu) return -147.56;
+  if (a==gly) return -0;
+  if (a==his) return -144.08;
+  if (a==ile) return -151.72;
+  if (a==leu) return -153.24;
+  if (a==lys) return -153.03;
+  if (a==met) return -159.50;
+  if (a==phe) return -146.92;
+  if (a==pro) return -105.62;
+  if (a==ser) return -139.94;
+  if (a==thr) return -142.28;
+  if (a==trp) return -155.35;
+  if (a==tyr) return -149.29;
+  if (a==val) return -150.47;
+  return 0;
+}//centroid_torsional_angle
+
+real
+Math::centroid_chi2 ( aminoacid a ) {
+  if (a==ala) return 110.53;
+  if (a==arg) return 113.59;
+  if (a==asn) return 117.73;
+  if (a==asp) return 116.03;
+  if (a==cys) return 115.36;
+  if (a==gln) return 115.96;
+  if (a==glu) return 115.98;
+  if (a==gly) return 0;
+  if (a==his) return 115.38;
+  if (a==ile) return 118.17;
+  if (a==leu) return 119.90;
+  if (a==lys) return 115.73;
+  if (a==met) return 115.79;
+  if (a==phe) return 114.40;
+  if (a==pro) return 123.58;
+  if (a==ser) return 110.33;
+  if (a==thr) return 111.67;
+  if (a==trp) return 109.27;
+  if (a==tyr) return 113.14;
+  if (a==val) return 114.46;
+  return 0;
+}//centroid_chi2
+
+real
+Math::centroid_distance ( aminoacid a ) {
+  if (a==ala) return 1.53;
+  if (a==arg) return 3.78;
+  if (a==asn) return 2.27;
+  if (a==asp) return 2.24;
+  if (a==cys) return 2.03;
+  if (a==gln) return 2.85;
+  if (a==glu) return 2.83;
+  if (a==gly) return 0;
+  if (a==his) return 3.01;
+  if (a==ile) return 2.34;
+  if (a==leu) return 2.62;
+  if (a==lys) return 3.29;
+  if (a==met) return 2.95;
+  if (a==phe) return 3.41;
+  if (a==pro) return 1.88;
+  if (a==ser) return 1.71;
+  if (a==thr) return 1.94;
+  if (a==trp) return 3.87;
+  if (a==tyr) return 3.56;
+  if (a==val) return 1.97;
+  return 0;
+}//centroid_distance
+
+int
+Math::centroid_radius ( aminoacid a ) {
+  if (a==ala) return 190;
+  if (a==arg) return 280;
+  if (a==asn) return 222;
+  if (a==asp) return 219;
+  if (a==cys) return 213;
+  if (a==gln) return 241;
+  if (a==glu) return 238;
+  if (a==gly) return 120;
+  if (a==his) return 249;
+  if (a==ile) return 249;
+  if (a==leu) return 249;
+  if (a==lys) return 265;
+  if (a==met) return 255;
+  if (a==phe) return 273;
+  if (a==pro) return 228;
+  if (a==ser) return 192;
+  if (a==thr) return 216;
+  if (a==trp) return 299;
+  if (a==tyr) return 276;
+  if (a==val) return 228;
+  return 100; // default
+}//centroid_radius

@@ -32,10 +32,11 @@ enum _euler_angles {PHI=0, THETA=1, PSI=2};
 enum _exploring_dir {up=1, down=-1};
 enum _var_type {bottom = 0, vfrag = 1, vpair = 2};
 enum _thread_type {worker = 1, scheduler = 2};
+enum ss_type       { helix, pi_helix, g_helix, turn, coil, sheet, other };
 enum atom_type {N, CA, CB, O, H, S, CG, X}; // X = generic atom
 enum aminoacid {ala, arg, asn, asp, cys, gln, glu, gly, his, ile, leu, 
 		lys, met, phe, pro, ser, thr, trp, tyr, val, err};
-enum fragment_type {standard=21, special=22, helix=23, sheet=24};
+enum fragment_type {standard=21, special=22, f_helix=23, f_sheet=24};
 enum constr_type { __c_alldist, __c_distGEQ, c_distLEQ, __c_fragment, 
 		   __c_pair, __c_energy, __c_bundle, __c_centroid, 
 		   __c_ellipsoid, __c_look_ahead, __c_loop, 
@@ -117,6 +118,7 @@ enum atom_covalent_radii {
 #define dist_N_Ca 1.46
 #define dist_Ca_C 1.51
 #define dist_epsilon 0.30
+#define close_to_zero_val 0.00001
 #define MAX_TIMEOUT 1000000000
 
 #endif

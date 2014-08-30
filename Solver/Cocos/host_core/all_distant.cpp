@@ -12,18 +12,11 @@ using namespace Math;
 /// @note: | D_aa | == gridDim.x
 void
 all_distant ( real* beam_str, real* validity_solutions, int v_id, int n_blocks, int n_threads, int n_bytes ) {
-  // int warp = WHICHWARP( blockIdx.x );//blockIdx.x>>5
-  //if ( domain_states[ offset + (blockIdx.x>>5) ] & ((uint) (1<<(blockIdx.x%32))) ) {
   for ( int blockIdx = 0; blockIdx < n_blocks; blockIdx++ ) {
     int check_success = 1;
-    /*
-    if (v_id==15)
-      check_all_dist ( &beam_str[ blockIdx * n_threads * 15 ], &check_success, n_threads, v_id );
-    else
-     */
     check_all_dist ( &beam_str[ blockIdx * n_threads * 15 ], &check_success, n_threads );
     if ( !check_success ) {
-      validity_solutions[ blockIdx ] = 0;
+      validity_solutions[ blockIdx ] += MAX_ENERGY;
     }
   }
   
@@ -71,9 +64,9 @@ check_all_dist ( real * local_point_list, int* check_success, int n_threads, int
         return;
       }
       if ( ( (Math::eucl_dist( my_Ca,  &local_point_list[ i*15   ] ))*100 < (Ca_radii + N_radii  - epsilon) ) ||
-          ( (Math::eucl_dist( my_Ca,  &local_point_list[ i*15+3 ] ))*100 < (Ca_radii + Ca_radii - epsilon) ) ||
-          ( (Math::eucl_dist( my_Ca,  &local_point_list[ i*15+6 ] ))*100 < (Ca_radii + C_radii  - epsilon) ) ||
-          ( (Math::eucl_dist( my_Ca,  &local_point_list[ i*15+9 ] ))*100 < (Ca_radii + O_radii  - epsilon) ) ) {
+           ( (Math::eucl_dist( my_Ca,  &local_point_list[ i*15+3 ] ))*100 < (Ca_radii + Ca_radii - epsilon) ) ||
+           ( (Math::eucl_dist( my_Ca,  &local_point_list[ i*15+6 ] ))*100 < (Ca_radii + C_radii  - epsilon) ) ||
+           ( (Math::eucl_dist( my_Ca,  &local_point_list[ i*15+9 ] ))*100 < (Ca_radii + O_radii  - epsilon) ) ) {
         if ( print_failed_var >= 0 ) {
           cout << "Failed " << i << " <-> " << thr << " on Ca\n";
         }
@@ -82,9 +75,9 @@ check_all_dist ( real * local_point_list, int* check_success, int n_threads, int
         return;
       }
       if ( ( (Math::eucl_dist( my_C,  &local_point_list[ i*15   ] ))*100 < (C_radii + N_radii  - epsilon) ) ||
-          ( (Math::eucl_dist( my_C,  &local_point_list[ i*15+3 ] ))*100 < (C_radii + Ca_radii - epsilon) ) ||
-          ( (Math::eucl_dist( my_C,  &local_point_list[ i*15+6 ] ))*100 < (C_radii + C_radii  - epsilon) ) ||
-          ( (Math::eucl_dist( my_C,  &local_point_list[ i*15+9 ] ))*100 < (C_radii + O_radii  - epsilon) ) ) {
+           ( (Math::eucl_dist( my_C,  &local_point_list[ i*15+3 ] ))*100 < (C_radii + Ca_radii - epsilon) ) ||
+           ( (Math::eucl_dist( my_C,  &local_point_list[ i*15+6 ] ))*100 < (C_radii + C_radii  - epsilon) ) ||
+           ( (Math::eucl_dist( my_C,  &local_point_list[ i*15+9 ] ))*100 < (C_radii + O_radii  - epsilon) ) ) {
         if ( print_failed_var >= 0 ) {
           cout << "Failed " << i << " <-> " << thr << " on C\n";
         }
@@ -93,9 +86,9 @@ check_all_dist ( real * local_point_list, int* check_success, int n_threads, int
         return;
       }
       if ( ( (Math::eucl_dist( my_O, &local_point_list[ i*15   ] ))*100 < (O_radii + N_radii  - epsilon) ) ||
-          ( (Math::eucl_dist( my_O,  &local_point_list[ i*15+3 ] ))*100 < (O_radii + Ca_radii - epsilon) ) ||
-          ( (Math::eucl_dist( my_O,  &local_point_list[ i*15+6 ] ))*100 < (O_radii + C_radii  - epsilon) ) ||
-          ( (Math::eucl_dist( my_O,  &local_point_list[ i*15+9 ] ))*100 < (O_radii + O_radii  - epsilon) ) ) {
+           ( (Math::eucl_dist( my_O,  &local_point_list[ i*15+3 ] ))*100 < (O_radii + Ca_radii - epsilon) ) ||
+           ( (Math::eucl_dist( my_O,  &local_point_list[ i*15+6 ] ))*100 < (O_radii + C_radii  - epsilon) ) ||
+           ( (Math::eucl_dist( my_O,  &local_point_list[ i*15+9 ] ))*100 < (O_radii + O_radii  - epsilon) ) ) {
         if ( print_failed_var >= 0 ) {
           cout << "Failed " << i << " <-> " << thr << " on O\n";
         }

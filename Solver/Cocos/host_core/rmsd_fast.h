@@ -44,9 +44,10 @@ namespace Rmsd_fast{
                   real* known_prot, int nres,
                   int scope_first, int scope_second,
                   int n_blocks );
-  real get_rmsd_aux ( real* my_prot,
-                      real* known_prot, int nres,
-                      int scope_first, int scope_second );
+  
+  real get_rmsd ( real* my_prot,
+                  real* known_prot, int nres,
+                  int scope_first, int scope_second );
   
   void normalize(double a[3]);
   double dot(double a[3], double b[3]);
@@ -62,6 +63,7 @@ namespace Rmsd_fast{
   int diagonalize_symmetric(double matrix[3][3],
                             double eigen_vec[3][3],
                             double eigenval[3]);
+  
   int calculate_rotation_matrix(double R[3][3],
                                 double U[3][3],
                                 double E0,

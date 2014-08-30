@@ -34,6 +34,7 @@ namespace Utilities{
   char cv_class_to_aa1(aminoacid a);
   aminoacid cv_aa_to_class(char a);
   aminoacid cv_aa_to_class(std::string a);
+  int cv_class_to_n ( aminoacid a );
 
   bitmask_t convert_point_to_hilbert_value (const point& p);
   void convert_hilbert_value_to_point (const bitmask_t& hilbert_value, point& p);
@@ -77,6 +78,7 @@ namespace Utilities{
   atom_type  get_atom_type(std::string str);
   atom_radii get_atom_radii(uint bbidx);
   atom_radii get_atom_radii (atom_type t);
+  
   int get_bbidx_from_aaidx (uint aaidx, atom_type type);
   int get_aaidx_from_bbidx (uint bbidx, atom_type type);
 

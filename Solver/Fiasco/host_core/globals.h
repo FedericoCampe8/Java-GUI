@@ -49,6 +49,18 @@ class Output;
 class Statistics;
 class Fragment;
 
+typedef struct {
+  /// Energy
+  real * h_distances;
+  real * h_angles;
+  real * contact_params;
+  real * tors_params;
+  real * tors;
+  real * tors_corr;
+  aminoacid * aa_seq;
+  ss_type* secondary_s_info;
+} GLB_params;
+
 extern AtomGrid g_grid;
 extern std::vector<Fragment> g_assembly_db;
 extern Protein g_target;
@@ -70,6 +82,8 @@ extern size_t fails;
 extern size_t table_head;
 extern size_t body_head;
 extern size_t tables;
+
+extern GLB_params g_params;
 
 #endif
 

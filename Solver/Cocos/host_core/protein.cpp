@@ -3,10 +3,12 @@
 #include "globals.h"
 #include "energy.h"
 #include "utilities.h"
+#include "mathematics.h"
 #include "atom.h"
 
 using namespace std;
 using namespace Utilities;
+using namespace Math;
 
 Protein::Protein( ) :
   _nres( 0 ),
@@ -24,7 +26,7 @@ Protein::~Protein () {
 }//-
 
 void 
-Protein::load_protein (string filename, string chain) {
+Protein::load_protein ( string filename, string chain ) {
   
   // Tokens used to parse the string from the pdb file
   const string dbref = "DBREF ";
@@ -36,7 +38,8 @@ Protein::load_protein (string filename, string chain) {
   string line, token, buf, proper_chain;
   aminoacid c;
   real x, y, z;
-  atom_type type = X;
+  atom_type type      = X;
+  atom_type last_type = X;
   char ok = 0;
 
   ifstream protein_file ( filename.c_str() );
@@ -65,7 +68,7 @@ Protein::load_protein (string filename, string chain) {
        * when there are different chains in the same
        * pdb file.
        */
-      if ( Utilities::get_atom_type( buf ) == type ) continue;
+      if ( (Utilities::get_atom_type( buf ) == type) || ( Utilities::get_atom_type( buf ) == last_type ) ) continue;
       else type = get_atom_type ( buf );
       
       buf = line.substr ( 16, 1 );
@@ -95,6 +98,7 @@ Protein::load_protein (string filename, string chain) {
       
       if ( ok ) {
         if ( type == N  || type == CA  ||  type == CB  || type == O || type == H ) {
+          last_type = type;
 	  if ( type == H ) _is_h_defined = true;
           Atom a ( x, y, z, type );
           _tertiary.push_back( a );
@@ -111,14 +115,21 @@ Protein::load_protein (string filename, string chain) {
       }//ok
     }
   }//while
+  /// H is not defined on pdb
+  if ( !_is_h_defined ) {
+    gh_params.h_def_on_pdb = false;
+  }
   
   // Handle Error
+  
   if ( (_tertiary.size() <= _nres*( 5-1 ) || _tertiary.size() > _nres*5) && _is_h_defined ) {
     for ( uint i = 0; i < _tertiary.size(); i++ ) _tertiary.at( i ).dump();
     cout << endl;
     cout << "nres " << _nres << " tert.size " << _tertiary.size() << endl;
     cout << "4*nres " << _nres*5 << endl;
+    getchar();
   }
+  
   
   // Clear last and first atoms differnt from O and N respectively 
   if ( (_tertiary.size() <= _nres*(5-1) || _tertiary.size() > _nres*5) && _is_h_defined ) {
@@ -128,6 +139,7 @@ Protein::load_protein (string filename, string chain) {
   
   if ( _is_h_defined ) {
     assert ( _tertiary.size() >  _nres*(5-1) && _tertiary.size() <= _nres*5 );
+    //assert ( _nres <= MAX_TARGET_SIZE );
     assert ( _nres <= MAX_TARGET_SIZE );
   }
   
@@ -193,30 +205,7 @@ Protein::get_sequence_code () {
 
 real
 Protein::get_minium_energy () {
-  real* plain_str = (real*) malloc ( _nres * 15 * sizeof(real) );
-  for ( int i = 0; i < _nres * 5; i++ ) {
-    plain_str[ 3*i + 0 ] = _tertiary[ i ][ 0 ];
-    plain_str[ 3*i + 1 ] = _tertiary[ i ][ 1 ];
-    plain_str[ 3*i + 2 ] = _tertiary[ i ][ 2 ];
-  }
-  
-  int n_threads = 32;
-  while ( n_threads < _nres ) n_threads += 32;
-  n_threads = n_threads*2 + 32;
-  real native_energy[ 1 ];
-  real state_native[ 1 ];
-  state_native[ 0 ] = 1;
-  get_energy( plain_str, native_energy,
-              state_native,
-              gd_params.secondary_s_info,
-              gd_params.h_distances, gd_params.h_angles,
-              gd_params.contact_params, gd_params.aa_seq,
-              gd_params.tors, gd_params.tors_corr,
-              8, 22, 7,
-              0, (5 * _nres) - 1,
-              _nres, 0, _nres-1,
-              0, 1, n_threads );
-  return native_energy[ 0 ];
+  return -MAX_ENERGY;
 }//get_minium_energy
 
 void

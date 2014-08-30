@@ -33,17 +33,13 @@
 #include <vector>
 #include <utility>
 
-/* Cuda */
-//#include "cuda.h"
-//#include <curand.h>
-//#include <curand_kernel.h>
-
 /* Other */
 #include "typedefs.h"
 #include "protein.h"
 
 class LogicVariables;
 class Constraint;
+class AtomGrid;
 
 
 // GLOBAL STRUCTURES
@@ -60,26 +56,35 @@ typedef struct {
 
 typedef struct {
   /// Input options
-  bool follow_rmsd;
-  bool verbose;
-  real str_weights[3];
-  real crd_weights[3];
-  int  n_coordinators;
-  int  set_size;
-  int  n_gibbs_samples;
-  int  n_gibbs_iters_before_swap;
-  int  timer;
+  sys_usage sys_job;
+  bool      follow_rmsd;
+  bool      translate_str;
+  bool      translate_str_fnl;
+  bool      centroid;
+  bool      gibbs_as_default;
+  bool      verbose;
+  real      str_weights[3];
+  real      crd_weights[3];
+  real      set_angles;
+  int       n_coordinators;
+  int       set_size;
+  int       n_gibbs_samples;
+  int       n_gibbs_iters_before_swap;
+  int       timer;
+  double    translation_point[4];
+  std::vector < std::vector<real> > seed_coords;
   /// Output options
+  size_t    num_models;
   std::string output_file;
   /// Variables and domains
   int n_res;
   int n_points;
   uint * domain_states;
-  //uint * bool_states;
   real * validity_solutions;
   /// Constraints info
-  int num_cons;
-  int max_scope_size;
+  bool atom_grid;
+  int  num_cons;
+  int  max_scope_size;
   std::vector< int > constraint_descriptions;
   std::vector< int > constraint_descriptions_idx;
   std::vector< std::vector< std::vector<int> > > constraint_events;
@@ -87,6 +92,7 @@ typedef struct {
   std::vector< MasAgentDes > mas_des;
   std::vector< std::vector< std::vector< real > > > domain_angles;
   /// Known and target protein
+  bool h_def_on_pdb;
   Protein* known_protein;
   Protein* target_protein;
   real * known_bb_coordinates;
@@ -99,6 +105,11 @@ typedef struct {
   real * tors;
   real * tors_corr;
   real * beam_energies;
+  /// Docking
+  int random_moves;
+  int min_n_contacts;
+  /// Contacts to ensure consistency when performing docking
+  std::vector < std::vector< real > >force_contact;
 } H_GLB_params;
 
 typedef struct {
@@ -131,6 +142,8 @@ extern H_GLB_params gh_params;
 extern D_GLB_params gd_params;
 
 extern LogicVariables g_logicvars;
+extern AtomGrid *     g_atom_grid; /// Atom grid constraint
+extern AtomGrid *     g_docking;   /// Dock used for Docking
 extern std::vector < Constraint* > g_constraints;
 
 #endif

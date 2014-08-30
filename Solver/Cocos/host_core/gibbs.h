@@ -46,16 +46,6 @@ private:
 public:
   GIBBS ( MasAgent* mas_agt, int init_set_size=MAX_GIBBS_SET_SIZE );
   ~GIBBS ();
-  /*
-  void set_sequential_scanning ();
-  void set_random_scanning ();
-  real get_local_minimum () const ;
-  bool is_changed () const;
-  int  get_n_ground () const;
-  bool all_ground () const;
-  void reset_iteration ();
-  void not_labeled ();
-  */
   
   void reset ();
   void search ();

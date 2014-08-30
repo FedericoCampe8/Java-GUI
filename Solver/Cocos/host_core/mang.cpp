@@ -8,15 +8,11 @@
 
 void
 mang ( int v_id,
-      int* vars_to_shuffle, int n_vars_to_shuffle,
-      real* all_domains, int* all_domains_idx,
-      real* current_str, real* beam_str,
-      int len_prot, int n_blocks, int n_threads, int smbytes ) {
-  /*
-   * @note: here all structures are valid
-   * int warp = WHICHWARP( blockIdx.x );
-   * if ( !(domain_states[ MAX_DIM * v_id + warp ] & ((uint) 1<<(blockIdx.x))) ) return;
-   */
+       int* vars_to_shuffle, int n_vars_to_shuffle,
+       real* all_domains, int* all_domains_idx,
+       real* current_str, real* beam_str,
+       int len_prot, int n_blocks, int n_threads, int smbytes ) {
+  // @note: here all structures are valid
   real phi, psi;
   real local_curr_str[ n_threads * 15 ];
   int v_id_aux, selected_var_ca_pos_aux;
@@ -45,10 +41,11 @@ mang ( int v_id,
     /// Rotate moving random angles
     if ( blockIdx >= max_d_size ) {
       for ( int i = 0; i < n_vars_to_shuffle; i++ ) {
+        
         v_id_aux = vars_to_shuffle[ i ];
         selected_var_ca_pos_aux = ( v_id_aux * 5 + 1 ) * 3;
         if ( v_id_aux == v_id ) continue;
-        
+        /// Selecting a random value from variable's domain
         int random_idx = all_domains_idx[ v_id_aux ] +
         ( rand() % ((uint) all_domains[ all_domains_idx[ v_id_aux ] ]) ) * 2;
         
@@ -57,14 +54,19 @@ mang ( int v_id,
         /// Rotate structure with random angles
         for ( int threadIdx = 0; threadIdx < n_threads; threadIdx++ ) {
           /// Move PHI angle
-          if ( threadIdx <= v_id )
-            Utilities::move_phi( local_curr_str, phi, v_id_aux, selected_var_ca_pos, 0, threadIdx );
+          if ( threadIdx <= v_id_aux ) {
+            Utilities::move_phi( local_curr_str, phi, v_id_aux, selected_var_ca_pos_aux, 0, threadIdx );
+          }
           /// Move PSI angle
-          if ( threadIdx >= v_id )
-            Utilities::move_psi( local_curr_str, psi, v_id_aux, selected_var_ca_pos, n_threads, threadIdx );
+          if ( threadIdx >= v_id_aux ) {
+            Utilities::move_psi( local_curr_str, psi, v_id_aux, selected_var_ca_pos_aux, n_threads, threadIdx );
+          }
         }
+        
       }//i
     }
+    
+    
     /// Copy back the rotated structure
     memcpy ( &beam_str[ blockIdx * n_threads * 15 ],
             local_curr_str, n_threads * 15*sizeof(real) );

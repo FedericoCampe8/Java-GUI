@@ -24,6 +24,7 @@ namespace Utilities{
   aminoacid cv_aa_to_class ( std::string a );
   int cv_class_to_n ( aminoacid a );
   atom_type get_atom_type( std::string name );
+  atom_type cv_string_to_atom_type( std::string name );
   
   /***************************************
    *      Offsets and Atom postions      *
@@ -51,9 +52,9 @@ namespace Utilities{
   /***************************************
    *          I/O aux functions          *
    ***************************************/
-  void output_pdb_format ( std::string, const std::vector<Atom>& );
-  std::string output_pdb_format ( point* structure, int len=0, real rmsd=0 );
-  std::string output_pdb_format ( real* structure, real rmsd=0 );
+  void output_pdb_format ( std::string, const std::vector<Atom>&, real energy = 0 );
+  std::string output_pdb_format ( point* structure, int len=0, real rmsd=1000, real energy = 0 );
+  std::string output_pdb_format ( real* structure, real rmsd=1000, real energy = 0 );
   
   int  get_format_digits ( real );
   std::string get_format_spaces ( real );

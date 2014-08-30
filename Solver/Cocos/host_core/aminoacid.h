@@ -19,6 +19,7 @@ private:
   
   void fill_domain ( std::vector< std::vector< real > >& domain_angles );
   void fill_backbone();
+  void set_angles ( real deg );
   
 public:
   /// Bit mask domain

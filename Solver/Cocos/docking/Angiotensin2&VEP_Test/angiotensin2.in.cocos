@@ -1,0 +1,17 @@
+DOCKING
+% Proteins Information
+PEPTIDE Docking/Angiotensin2&VEP_Test/angiotensin2_BkBn
+KNOWN_PROT  docking/Angiotensin2&VEP_Test/frame1 
+% Constraints
+ATOM_GRID docking/Dock.pdb
+DOCK_GRID docking/Dock.pdb 3
+% SEED: center of the sphere within the dock
+SEED 12.95 -8.17 -21.99 10 4 
+%SEED 9.192 5.456 -4.806 10 4 
+% @note: atom idx with H in Backbone -> idx + (idx/4 - 1)
+% 28 -> 34, 24 -> 29, 16 -> 19
+DOCK_CONTACT 2.3 3.3 34 8.215 -11.905 -25.991
+DOCK_CONTACT 2.3 3.3 34 10.901 -11.419 -28.173
+DOCK_CONTACT 2.3 3.3 29 8.954 -8.151 -22.063
+DOCK_CONTACT 2.3 3.3 19 16.284 -7.921 -14.373
+

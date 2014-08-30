@@ -74,9 +74,10 @@ Supervisor::set_agents () {
            */
         }
         
-        /// Skip first and last amino acid (tails)
-        if ( (cr_agt->get_var_id ( ii ) == 0) ||
-             (cr_agt->get_var_id ( ii ) == (gh_params.n_res - 1)) ) {
+        /// Skip first and last amino acid (tails) for ab-initio prediction
+        if ( ((cr_agt->get_var_id ( ii ) == 0) ||
+             (cr_agt->get_var_id ( ii ) == (gh_params.n_res - 1))) &&
+             (gh_params.sys_job == ab_initio) ) {
           continue;
         }
         cr_agt->add_worker( _wrk_agents[ cr_agt->get_var_id ( ii ) ].second );
@@ -103,7 +104,7 @@ Supervisor::set_agents () {
 void
 Supervisor::search() {
   Utilities::print_debug ( _dbg, "Starting search..." );
-
+  
   int agt_counter=0;
   while( agt_counter < _n_mas_agents ) {
     for ( int i = 0; i < _n_mas_agents; i++) {
@@ -112,6 +113,7 @@ Supervisor::search() {
       if ( _mas_agents[ i ].second->done() ) { agt_counter++; continue; }
       /// Choose between agents
       if ( _mas_agents[ i ].second->get_agt_type() == coordinator ) {
+    
         /// Coordinator agent: search
         /// Set current solution as global current solution
         g_logicvars.set_point_variables ( _current_solution );
@@ -164,8 +166,9 @@ Supervisor::search() {
     }//i
   }
   
-  /// Print solution
-  g_logicvars.print_point_variables();
+  /// Print solution for Ab-Inito prediction
+  if ( gh_params.sys_job == ab_initio )
+    g_logicvars.print_point_variables();
   
   Utilities::print_debug ( _dbg, "End search" );
 }//search
@@ -190,35 +193,3 @@ Supervisor::dump() {
   for ( int i = 0; i < _mas_agents.size(); i++)
     _mas_agents[ i ].second->dump();
 }//dump
-
-
-
-
-/*
- _quantum = 5;
- cout << _dbg << "Search (q: " << _quantum << ")\n";
- 
- srand (time(NULL));
- int iRand;
- do {
- iRand = rand() % 8 + 1;
- timeval time_stats;
- double time_start, total_time;
- gettimeofday(&time_stats, NULL);
- time_start = time_stats.tv_sec + (time_stats.tv_usec/1000000.0);
- 
- sleep ( rand() % 5 + 1 );
- //search_engine->search();
- 
- gettimeofday(&time_stats, NULL);
- total_time = time_stats.tv_sec + (time_stats.tv_usec/1000000.0) - time_start;
- cout << _dbg << "Used time: " << total_time << endl;
- } while ( iRand < _quantum );
- 
- int iRand_exit = rand() % 10 + 1;
- if (iRand_exit >= 5) {
- _end_search = true;
- }
- else
- _end_search = false;
- */

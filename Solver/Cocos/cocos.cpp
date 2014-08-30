@@ -1,7 +1,7 @@
 /*********************************************************************
  * Authors: Federico Campeotto (campe8@nmsu.edu)                     *
  *                                                                   *
- * (C) Copyright 2012-2013                                           *
+ * (C) Copyright 2013-2014                                           *
  *                                                                   *
  * This file is part of COCOS (COncurrent system with COnstraints    *
  * for protein Structure prediction).                                *
@@ -33,9 +33,7 @@ int main ( int argc, char* argv[] ) {
   /***************************************
    *         INIT DATA STRUCTURES        *
    ***************************************/
-  cout << dbg << "Initialize Data...\n";
-  Input_data i_data( argc, argv );
-  
+  Input_data * i_data = Input_data::get_instance( argc, argv );
   /***************************************
    *           LOGIC VARIABLES           *
    ***************************************/
@@ -52,7 +50,7 @@ int main ( int argc, char* argv[] ) {
    *             CONSTRAINTS             *
    ***************************************/
   cout << dbg <<
-  "Setting Constraints on Variables..." << endl;
+  "Setting Constraints on Variables...\n";
   /// CONSTRAINT: SANG/RANG
   set_search_labeling_strategies ();
   /// CONSTRAINT: ALL_DISTANT
@@ -60,9 +58,15 @@ int main ( int argc, char* argv[] ) {
   /// CONSTRAINT: DISTANCE
   //set_distance_constraint ();
   /// CONSTRAINT: CG
-  //set_centroid_constraint();
+  if ( gh_params.centroid ) {
+    set_centroid_constraint();
+  }
+  /// CONSTRAINT: ATOM_GRID
+  if ( gh_params.atom_grid ) {
+    set_atom_grid_constraint();
+  }
   /// Alloc constraints
-  i_data.alloc_constraints();
+  i_data->alloc_constraints();
 
   /***************************************
    *               LABELING              *
@@ -91,14 +95,7 @@ int main ( int argc, char* argv[] ) {
    *           CLEAR AND EXIT            *
    ***************************************/
   cout << dbg << "Freeing memory" << endl;
-  i_data.clear_data();
-  /*
-  g_logicvars.clear_variables();
-  for ( int i = 0; i < g_constraints.size(); i++ )
-    delete g_constraints[i];
-   g_constraints.clear();
-   supervisor_agt.~Supervisor();
-  */
+  i_data->clear_data();
   cout << dbg << "Memory freed." << endl;
   cout << dbg << "Exit from COCOS... \n";
 

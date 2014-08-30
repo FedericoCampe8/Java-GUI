@@ -32,20 +32,26 @@ class Input_data {
   string target_prot_file;
   string known_prot_file;
   string known_prot_chain;
+  string seq_type;
   int multipleFragmentdb;  
   
   /* Mpi parameters */
   int pid;	    // Current process id
   int nagents;	    // Number of processes in the pool
 
+  void read_energy_parameters ( std::string file_name, std::vector< std::vector<real> >& );
+  
  public:
   Protein target;
   Protein known_prot;
 
   /* Constructor, destructor */
   Input_data (int argc, char* argv[]);
+  ~Input_data ();
 
   /* Methods */
+  void alloc_energy ();
+  void init_energy ();
   std::string get_known_prot_chain() const {return known_prot_chain; }
   string get_fragmentdb() const {return fragmentdb;}
   void set_fragmentdb(const string frgDb){
@@ -75,6 +81,7 @@ class Input_data {
   void load_constraint_file (vector<Fragment>& fragment_set);
   void dump_log();
 
+  void clear ();
 }; //input_data
 
 #endif

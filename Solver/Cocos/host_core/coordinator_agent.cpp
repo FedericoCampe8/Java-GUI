@@ -2,6 +2,7 @@
 #include "search_engine.h"
 #include "icm.h"
 #include "gibbs.h"
+#include "docking.h"
 #include "montecarlo.h"
 #include "worker_agent.h"
 #include "logic_variables.h"
@@ -18,19 +19,25 @@ CoordinatorAgent::CoordinatorAgent ( MasAgentDes description, int prot_len ) :
    _energy_weights[ 1 ] = gh_params.crd_weights[ 1 ];
    _energy_weights[ 2 ] = gh_params.crd_weights[ 2 ];
    /// Set search strategy
-   switch ( _search_strategy ) {
-     case icm:
-       _search_engine = (SearchEngine*) new ICM ( this );
-       break;
-     case gibbs:
-       _search_engine = (SearchEngine*) new GIBBS ( this );
-       break;
-     case montecarlo:
-       _search_engine = (SearchEngine*) new MONTECARLO ( this );
-       break;
-     default:
-       _search_engine = (SearchEngine*) new MONTECARLO ( this );
-       break;
+   if ( gh_params.sys_job == ab_initio ) {
+     switch ( _search_strategy ) {
+       case icm:
+         _search_engine = new ICM ( this );
+         break;
+       case gibbs:
+         _search_engine = new GIBBS ( this );
+         break;
+       case montecarlo:
+         _search_engine = new MONTECARLO ( this );
+         break;
+       default:
+         _search_engine = new MONTECARLO ( this );
+         break;
+     }
+   }
+   else {
+     _search_engine = new DOCKING ( this );
+     (static_cast<DOCKING *>(_search_engine))->set_parameters ( gh_params.seed_coords );
    }
    
    string print_scope = "Created on\n[";
@@ -60,22 +67,6 @@ CoordinatorAgent::search () {
   Utilities::print_debug ( "*----------------*" );
   Utilities::print_debug ( _dbg, "Search" );
   
-  SearchEngine* engine;
-  switch ( _search_strategy ) {
-    case icm:
-      engine = (ICM*) _search_engine;
-      break;
-    case gibbs:
-      engine = (GIBBS*) _search_engine;
-      break;
-    case montecarlo:
-      engine = (MONTECARLO*) _search_engine;
-      break;
-    default:
-      engine = (MONTECARLO*) _search_engine;
-      break;
-  }
-  
 #ifdef TIME_STATS
   timeval time_stats;
   double time_start, total_time;
@@ -87,11 +78,14 @@ CoordinatorAgent::search () {
   search_alloc ();
   search_init ();
   /// Sampling
-  engine->reset ();
-  engine->search ();
+  _search_engine->reset ();
+  _search_engine->search ();
   
   /// Set global energy value and structure
-  gh_params.minimum_energy = engine->get_local_minimum();
+  real updated_energy = _search_engine->get_local_minimum();
+  if ( updated_energy < MAX_ENERGY ) {
+    gh_params.minimum_energy = _search_engine->get_local_minimum();
+  }
   memcpy ( _current_status, gd_params.curr_str, _n_points * sizeof(real) );
 
   /// Free structures
@@ -100,7 +94,7 @@ CoordinatorAgent::search () {
   
   if ( gh_params.verbose ) {
     cout << _dbg << "Found a minimum:\n";
-    cout << "\t - Energy:" << engine->get_local_minimum() << endl;
+    cout << "\t - Energy:" << _search_engine->get_local_minimum() << endl;
     
 #ifdef TIME_STATS
     gettimeofday(&time_stats, NULL);

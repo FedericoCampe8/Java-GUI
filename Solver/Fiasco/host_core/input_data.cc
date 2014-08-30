@@ -8,6 +8,9 @@
 #include "logic_variables.h"
 #include "output.h"
 
+#include "tors_corr_bmf.h"
+#include "tors_bmf.h"
+
 #include <iostream>
 #include <cassert>
 #include <vector>
@@ -40,6 +43,10 @@ Input_data::Input_data (int argc, char* argv[])
   read_files (inputfile);
   load_constraint_file (g_assembly_db);
 }//-
+
+Input_data::~Input_data () {
+  clear();
+}//~Input_data
 
 void 
 Input_data::set_fragmentdb_l(const string frgDb, int n){
@@ -141,6 +148,10 @@ Input_data::read_files (std::string filename) {
 	constraint_file = line.substr(start, line.size() - start);
       if(line.compare(0, 11, "FRAG_SEC_FL") == 0)
 	frag_spec_file = line.substr(start, line.size() - start);
+      if ( line.compare(0, 3, "SEQ") == 0 ) {
+        size_t position = line.find_first_of ( " " );
+        seq_type = line.substr ( position + 1, line.size() );
+      }
     }
     inputFile.close();
   }else {
@@ -378,6 +389,135 @@ Input_data::load_constraint_file (vector<Fragment>& fragment_set) {
   in_pdbfile.close();
 
 }//-
+
+
+void
+Input_data::alloc_energy () {
+  g_params.h_distances       = new real [25*3];
+  g_params.h_angles          = new real [73*9];
+  g_params.contact_params    = new real [20*20];
+  g_params.tors              = new real [20*20*18*3];
+  g_params.tors_corr         = new real [18*18*5];
+  g_params.aa_seq            = new aminoacid [ g_target.get_nres()];
+  g_params.secondary_s_info  = new ss_type [ g_target.get_nres()];
+}//alloc_energy
+
+void
+Input_data::init_energy () {
+  
+  assert ( g_target.get_nres() > 0 );
+  assert ( g_target.seq_code.size() > 0 );
+  
+  int idx = 0;
+  for ( auto c : seq_type ) {
+    if ( c == 'H' ) {
+      g_params.secondary_s_info [ idx ] = helix;
+    }
+    else if ( c == 'S' ) {
+      g_params.secondary_s_info [ idx ] = sheet;
+    }
+    else {
+      g_params.secondary_s_info [ idx ] = other;
+    }
+    idx++;
+  }
+  if ( idx < g_target.get_nres() )
+    for ( ; idx < g_target.get_nres(); idx++ )
+      g_params.secondary_s_info [ idx ] = other;
+  
+  for ( int i = 0; i < g_target.get_nres(); i++ ) {
+    g_params.aa_seq[ i ] = g_target.seq_code[ i ];
+  }
+
+  // Fill the matrices with csv values read from file
+  std::vector< std::vector<real> > energy_params;
+  // H_Distances
+  read_energy_parameters ( "config/h_distances.csv", energy_params );
+  for (int i = 0; i < 25; i++)
+    for (int j = 0; j < 3; j++)
+      g_params.h_distances[ 3*i + j ] = energy_params[ i ][ j ];
+  energy_params.clear();
+  // H_Angles
+  read_energy_parameters ( "config/h_angles.csv", energy_params );
+  for (int i = 0; i < 73; i++)
+    for (int j = 0; j < 9; j++)
+      g_params.h_angles[ 9*i + j ] =  energy_params[ i ][ j ];
+  energy_params.clear();
+  cout << "Hydrogen parameters loaded" << endl;
+  // Contact Parameters
+  read_energy_parameters ( "config/contact.csv", energy_params );
+  for (int i = 0; i < 20; i++)
+    for (int j = 0; j < 20; j++)
+      g_params.contact_params[ 20*i+j ] = energy_params[ i ][ j ];
+  energy_params.clear();
+  cout << "Contact parameters loaded" << endl;
+  
+  
+  // From ".h" file
+  for (int i = 0; i < 20; i++)
+    for (int j = 0; j < 20; j++)
+      for (int z = 0; z < 18; z++)
+        for (int t = 0; t < 3; t++)
+          g_params.tors [ i*20*18*3 + j*18*3 + z*3 + t ] = tors[ i ][ j ][ z ][ t ];
+  for (int i = 0; i < 18; i++)
+    for (int j = 0; j < 18; j++)
+      for (int z = 0; z < 5; z++)
+        g_params.tors_corr[ i*18*5 + j*5 + z ] = tors_corr[ i ][ j ][ z ];
+  cout << "Torsional parameters loaded" << endl;
+}//init_energy
+
+
+void
+Input_data::read_energy_parameters ( string file_name, vector< vector<real> >& param_v ) {
+  string line;
+  string token;
+  real value;
+  size_t found;
+  size_t t = 0;
+  
+  ifstream csv_file ( file_name.c_str() );
+  
+  if ( !csv_file.is_open() ) {
+    cout <<  "error opening energy parameters file " << file_name << endl;
+    exit( 1 );
+    return;
+  }
+  
+  
+  while ( csv_file.good() ) {
+    vector< real > line_v;
+    getline ( csv_file, line );
+    if (line.compare(0,1, "%") == 0) continue;
+    found = line.find_first_of( "," );
+    while ( found != string::npos ) {
+      token = line.substr( t, found - t );
+      value = atof( token.c_str() );
+      line_v.push_back( value );
+      t = t + token.size() + 1;
+      found = line.find_first_of( ",", found+1 );
+    }
+    token = line.substr( t, found - t );
+    value = atof( token.c_str() );
+    line_v.push_back( value );
+    
+    param_v.push_back( line_v );
+    t = 0;
+  }//while
+  
+  csv_file.close();
+}//read_energy_parameters
+
+
+void
+Input_data::clear() {
+  delete [] g_params.h_distances;
+  delete [] g_params.h_angles;
+  delete [] g_params.contact_params;
+  delete [] g_params.tors;
+  delete [] g_params.tors_corr;
+  delete [] g_params.aa_seq;
+  delete [] g_params.secondary_s_info;
+}
 
 void
 Input_data::dump_log() {

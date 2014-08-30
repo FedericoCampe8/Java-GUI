@@ -9,10 +9,10 @@
 #include "distance.h"
 #include "centroid.h"
 #include "mang.h"
+#include "rand_move.h"
 #include "k_rang.h"
-//#include "cuda_k_rang.h"
-//#include "cuda_k_angle_shuffle.h"
-//#include "cuda_utilities.h"
+#include "atm_grd.h"
+
 
 //#define PROP_DEBUG
 //#define PROP_C_K_ANGLE_SHUFFLE_DEBUG
@@ -27,13 +27,13 @@
 void
 check_failure ( real* state, int* domain_events, int n_threads ) {
   int failed = 1;
-  for (int threadIdx=0; threadIdx<n_threads; threadIdx++) {
-    if ( state[ threadIdx ] > 0 ) {
+  for (int threadIdx = 0; threadIdx<n_threads; threadIdx++) {
+    if ( state[ threadIdx ] <= MAX_ENERGY ) {
       failed = 0;
       break;
     }
   }
-  failed ? domain_events[ 0 ] = failed_event : domain_events[ 0 ] = events_size;
+  domain_events[ 0 ] = failed ?  failed_event : events_size;
 }//gpu_check
 
 
@@ -41,7 +41,8 @@ void
 Propagator::prepare_init_set ( real* current_str, real* beam_str, real* states, int n_blocks ) {
   /// Set current_str in place of non valid structures
   for ( int blockIdx = 0; blockIdx < n_blocks; blockIdx++ ) {
-    if ( states[ blockIdx ] == 0 ) {
+    if ( states[ blockIdx ] >= MAX_ENERGY ) {
+      // Failed
       memcpy( &beam_str[ blockIdx * gh_params.n_res * 15 ], current_str, gh_params.n_res * 15 * sizeof( real ) );
     }
   }
@@ -50,7 +51,8 @@ Propagator::prepare_init_set ( real* current_str, real* beam_str, real* states, 
 void
 Propagator::update_set ( real* current_beam, real* upd_beam, real* states, int n_blocks ) {
   for ( int blockIdx = 0; blockIdx < n_blocks; blockIdx++ ) {
-    if ( states[ blockIdx ] > 0 ) {
+    if ( states[ blockIdx ] < MAX_ENERGY ) {
+      // Not failed
       memcpy( &current_beam[ blockIdx * gh_params.n_res * 15 ],
               &upd_beam[ blockIdx * gh_params.n_res * 15 ], gh_params.n_res * 15 * sizeof( real ) );
     }
@@ -88,12 +90,6 @@ Propagator::prop_c_sang ( int v_id, int c_id, int c_idx ) {
   sang( gd_params.curr_str, gd_params.beam_str,
         gd_params.all_domains, gd_params.all_domains_idx,
         v_id, n_blocks, n_threads, smBytes );
-  /*
-  if (v_id == 15) {
-    print_beam ( gd_params.beam_str, 0, n_blocks );
-    getchar();
-  }
-   */
 }//prop_c_sang
 /*************************************************************/
 
@@ -102,7 +98,6 @@ void
 Propagator::prop_c_k_rang ( int v_id, int c_id, int c_idx ) {
 #ifdef PROP_DEBUG
   cout << "k_rang constraint V_" << v_id << endl;
-  //getchar();
 #endif
   
   k_rang( v_id,
@@ -121,7 +116,6 @@ void
 Propagator::prop_c_mang ( int v_id, int c_id, int c_idx ) {
 #ifdef PROP_DEBUG
   cout << "mang constraint V_" << v_id << endl;
-  //getchar();
 #endif
   
   int n_blocks  = 1;
@@ -131,9 +125,9 @@ Propagator::prop_c_mang ( int v_id, int c_id, int c_idx ) {
   int n_coeff   = gh_params.constraint_descriptions[ c_idx + 2 ];
   int k_size    = gh_params.set_size;
 
-  //AminoAcid* aa = g_logicvars.cp_variables[ v_id ];
-  //k_size  = aa->get_domain_size();
-  //n_threads = 32;
+  // AminoAcid* aa = g_logicvars.cp_variables[ v_id ];
+  // k_size  = aa->get_domain_size();
+  // n_threads = 32;
   mang( v_id, &gh_params.constraint_descriptions[ c_idx + 3 + n_vars ],
         n_coeff, gd_params.all_domains,
         gd_params.all_domains_idx,
@@ -142,7 +136,16 @@ Propagator::prop_c_mang ( int v_id, int c_id, int c_idx ) {
         gh_params.n_res,
         k_size, n_threads, smBytes
       );
-//  print_beam ( gd_params.beam_str, 349, 350 );
+  /* 
+   * If docking and ran_tran_rot is set: perform random
+   * translation/rotation of the structures in the beam set.
+   */
+  if ( (gh_params.sys_job == docking) && gh_params.random_moves ) {
+    translate_rotate_rand( gd_params.beam_str,
+                           gh_params.n_res,
+                           k_size, n_threads, smBytes );
+  }
+  // print_beam ( gd_params.beam_str, 349, 350 );
 }//prop_c_mang
 /*************************************************************/
 
@@ -157,7 +160,6 @@ void
 Propagator::prop_c_all_dist ( int v_id, int c_id, int c_idx ) {
 #ifdef PROP_DEBUG
   cout << "all_distant constraint V_" << v_id << endl;
-  //getchar();
 #endif
   
   int type_of_agent = gh_params.constraint_descriptions[ c_idx + 3 +
@@ -267,5 +269,51 @@ Propagator::prop_c_dist ( int v_id, int c_id, int c_idx ) {
                                                  gh_params.constraint_descriptions[ c_idx + 1 ] ],
              gh_params.n_res, n_blocks, n_threads );
 }//prop_c_dist
+/*************************************************************/
+
+/********************** prop_c_atom_grid **********************/
+/*
+ * prop_c_atom_grid ( beam_str )
+ * Check that each point i in the lists of points contained in beam_str
+ * has Euclidean distance >= min_distances[ i, j ] where j is a point in the atom_grid structure.
+ */
+void
+Propagator::prop_c_atom_grid ( int v_id, int c_id, int c_idx ) {
+#ifdef PROP_DEBUG
+  cout << "atom_grid constraint V_" << v_id << endl;
+  //getchar();
+#endif
+
+  int type_of_agent = gh_params.constraint_descriptions[ c_idx + 3 +
+                                                         gh_params.constraint_descriptions[ c_idx + 1 ] +
+                                                         gh_params.n_res + 1 ];
+  int n_blocks;
+  int n_threads = gh_params.n_res;
+  int smBytes   = gh_params.n_points * sizeof(real);
+  if ( type_of_agent == coordinator ) {
+    n_blocks = gh_params.set_size;
+    if ( gd_params.beam_str_upd == NULL ) {
+      atom_grd( gd_params.beam_str,
+                gd_params.validity_solutions, gd_params.aa_seq,
+                v_id, n_blocks, n_threads, smBytes);
+    }
+    else {
+      atom_grd( gd_params.beam_str_upd,
+                gd_params.validity_solutions, gd_params.aa_seq,
+                v_id, n_blocks, n_threads, smBytes);
+    }
+    
+  }
+  else {
+    AminoAcid* aa = g_logicvars.cp_variables[ v_id ];
+    n_blocks  = aa->get_domain_size();
+    atom_grd( gd_params.beam_str,
+              gd_params.validity_solutions, gd_params.aa_seq,
+              v_id, n_blocks, n_threads, smBytes);
+    
+  }
+  /// To optimize...
+  check_failure(  gd_params.validity_solutions, gd_params.domain_events, n_blocks );
+}//prop_c_all_dist
 /*************************************************************/
 

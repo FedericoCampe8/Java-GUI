@@ -24,19 +24,6 @@ public:
   void clear_agents();
   
   void dump();
-  
-  
-  /*
-  void set_current_structure();
-  void create_agents(std::vector<int> agts);
-  void set_weights(std::vector<real>& weights_val);
-  void clear_agents();
-  
-  void print_results(int str_agt_idx);
-  void print_to_file(int str_agt_idx, real rmsd=1000);
-  void print_to_file(std::vector< std::vector<real> > structure, real energy,
-                       int start_aa, int num_wa, real rmsd);
-   */
 };
 
 #endif

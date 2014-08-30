@@ -181,6 +181,33 @@ Utilities::count_active
   return count; 
 }//-
 
+int
+Utilities::cv_class_to_n(aminoacid a){
+  if (a==ala) return 0;
+  if (a==arg) return 1;
+  if (a==asn) return 2;
+  if (a==asp) return 3;
+  if (a==cys) return 4;
+  if (a==gln) return 5;
+  if (a==glu) return 6;
+  if (a==gly) return 7;
+  if (a==his) return 8;
+  if (a==ile) return 9;
+  if (a==leu) return 10;
+  if (a==lys) return 11;
+  if (a==met) return 12;
+  if (a==phe) return 13;
+  if (a==pro) return 14;
+  if (a==ser) return 15;
+  if (a==thr) return 16;
+  if (a==trp) return 17;
+  if (a==tyr) return 18;
+  if (a==val) return 19;
+  cout << "#error (cv_class_to_n -> " << a << ")" << endl;
+  getchar();
+  return -1;
+}//cv_class_to_n
+
 void
 Utilities::populate_fragment_assembly_db (vector<Fragment>& fragment_set, int fragment_len, string filename) {
   string dbg = "Utilities::populate_fragment_assembly_db () - ";
@@ -229,8 +256,8 @@ Utilities::populate_fragment_assembly_db (vector<Fragment>& fragment_set, int fr
     }  
     
     if (res_id == special) type = special;
-    else if (res_id == helix) type = helix;
-    else if (res_id == sheet) type = sheet;
+    else if (res_id == f_helix) type = f_helix;
+    else if (res_id == f_sheet) type = f_sheet;
     else type = standard;
 
     // Read coordinates 4*n + 3   (C' O N Ca)* C' O N

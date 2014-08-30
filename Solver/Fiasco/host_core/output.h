@@ -19,14 +19,15 @@ class Output {
   std::vector<std::string> buffer;
   std::string file_out;
   size_t model_ct;
+  std::vector<real> energy;
   
  public:
   Output(int argc, char* argv[]);
-  void store_results();
-  void store_results( real rmsd );
-  void store_best_results();
-  void store_best_results( real rmsd );
-  void store_results( uint atom_s, uint atom_e, real rmsd = -1, bool store_best = false );
+  void store_results( real energy = 1000 );
+  void store_results( real rmsd, real energy = 1000 );
+  void store_best_results( real energy = 1000 );
+  void store_best_results( real rmsd, real energy = 1000  );
+  void store_results( uint atom_s, uint atom_e, real energy = 1000, real rmsd = -1, bool store_best = false );
   // for debug
   void store_points (std::vector<real> points); 
   void dump();

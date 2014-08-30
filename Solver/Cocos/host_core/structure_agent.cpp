@@ -17,7 +17,7 @@ StructureAgent::StructureAgent ( MasAgentDes description, int prot_len ) :
    _energy_weights[ 0 ] = gh_params.str_weights[ 0 ];
    _energy_weights[ 1 ] = gh_params.str_weights[ 1 ];
    _energy_weights[ 2 ] = gh_params.str_weights[ 2 ];
-   _search_engine = (SearchEngine*) new ICM ( this );
+   _search_engine = new ICM ( this );
    
    ostringstream scope1, scope2, len_scope;
    scope1 << _scope.first;
@@ -35,8 +35,6 @@ StructureAgent::search () {
   Utilities::print_debug ( "*----------------*" );
   Utilities::print_debug ( _dbg, "Search" );
   
-  ICM* engine = (ICM*) _search_engine;
-  
 #ifdef TIME_STATS
   timeval time_stats;
   double time_start, total_time;
@@ -45,22 +43,13 @@ StructureAgent::search () {
 #endif
   
   search_alloc ();
-  search_init ();
+  search_init  ();
   
-  engine->reset ();
-  do { 
-#ifdef STR_AGT_SEARCH_DEBUG
-    static int n_iteration = 0;
-    cout << _dbg << "Iteration n_" << ++n_iteration << "\n";
-#endif
-    
-    engine->reset_iteration ();
-    engine->search ();
-    
-  } while ( engine->is_changed() );
+  _search_engine->reset  ();
+  _search_engine->search ();
   
   /// Set global energy value and structure
-  gh_params.minimum_energy = engine->get_local_minimum();
+  gh_params.minimum_energy = _search_engine->get_local_minimum();
   memcpy ( _current_status, gd_params.curr_str,
           _n_points * sizeof(real) );
   
@@ -76,7 +65,7 @@ StructureAgent::search () {
   
   if ( gh_params.verbose ) {
     cout << _dbg << "Found a minimum:\n";
-    cout << "\t - Energy:" << engine->get_local_minimum() << endl;
+    cout << "\t - Energy:" << _search_engine->get_local_minimum() << endl;
 #ifdef TIME_STATS
     gettimeofday(&time_stats, NULL);
     total_time = time_stats.tv_sec + (time_stats.tv_usec/1000000.0) - time_start;

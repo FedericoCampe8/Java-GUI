@@ -42,6 +42,12 @@ int main (int argc, char* argv[]) {
   g_known_prot.load_protein ( In.get_known_prot_file(), In.get_known_prot_chain() );
   g_target.load_protein ( In.get_target_prot_file(), In.get_known_prot_chain() );
   cout << dbg << "Load input and target proteins\n";
+  
+  In.alloc_energy ();
+  In.init_energy ();
+  
+  cout << dbg << "Load energy tables\n";
+  
   // Process output preferences
   g_output = new Output (argc, argv);
   // Create Statistics object
@@ -49,10 +55,12 @@ int main (int argc, char* argv[]) {
   // Load Fragment Assembly DB
   Utilities::populate_fragment_assembly_db ( g_assembly_db, 1, In.get_fragmentdb() );
   cout << dbg << "Populate fragments\n";
+  
   // ---------------------------------------------------------------
   // Set Problem Variables 
   // ---------------------------------------------------------------
   g_logicvars = new LogicVariables (argc, argv);
+  
   // Set Reference System
   Fragment *first_fragment = &g_logicvars->var_fragment_list[0].domain[0];
   R_MAT &rot_mat_ori_system = first_fragment->rot_m;

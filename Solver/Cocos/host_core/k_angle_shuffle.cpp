@@ -12,11 +12,7 @@ k_angle_shuffle ( int* vars_to_shuffle, int n_vars_to_shuffle,
                   real* all_domains, int* all_domains_idx,
                   real* current_str, real* beam_str,
                   int n_blocks, int n_threads, int smBytes ) {
-  /*
-   * @note: here all structures are valid
-   * int warp = WHICHWARP( blockIdx.x );
-   * if ( !(domain_states[ MAX_DIM * v_id + warp ] & ((uint) 1<<(blockIdx.x))) ) return;
-   */
+  // @note: here all structures are valid
   real local_curr_str[ gh_params.n_res * 15 ];
   for ( int blockIdx = 0; blockIdx < n_blocks; blockIdx++ ) {
     /// Set initial structure

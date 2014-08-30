@@ -439,8 +439,8 @@ Rmsd_fast::get_rmsd ( real* beam_str, real* beam_energies,
     if ( validity_solutions[ blockIdx ] > 0 ) {
       /// Calculate RMSD
       beam_energies[ blockIdx ] =
-      get_rmsd_aux ( &beam_str[ blockIdx * nres * 15 ], known_prot,
-                     nres, scope_first, scope_second );
+      get_rmsd ( &beam_str[ blockIdx * gh_params.n_res * 15 ], known_prot,
+                 nres, scope_first, scope_second );
     }
     else {
       beam_energies[ blockIdx ] = MAX_ENERGY;
@@ -449,19 +449,21 @@ Rmsd_fast::get_rmsd ( real* beam_str, real* beam_energies,
 }//get_rmsd
 
 real
-Rmsd_fast::get_rmsd_aux ( real* my_prot,
-                          real* known_prot, int nres,
-                          int scope_first, int scope_second ) {
+Rmsd_fast::get_rmsd ( real* my_prot,
+                      real* known_prot, int nres,
+                      int scope_first,  int scope_second ) {
   double rmsd;
-  double ref_atoms[4*nres][3];
-  double mov_xlist[4*nres][3];
+  double ref_atoms[ 4 * nres ][ 3 ];
+  double mov_xlist[ 4 * nres ][ 3 ];
   
   int t = 0;
+  int offset_know_prot = 15;
+  if ( !gh_params.h_def_on_pdb ) offset_know_prot = 12;
   for ( int i = scope_first; i <= scope_second; i++ ) {
     for ( int j = 0; j < 4; j++ ) {
-      ref_atoms[ t*4 + j ][0] = known_prot[ i * 15 + j*3 + 0 ];
-      ref_atoms[ t*4 + j ][1] = known_prot[ i * 15 + j*3 + 1 ];
-      ref_atoms[ t*4 + j ][2] = known_prot[ i * 15 + j*3 + 2 ];
+      ref_atoms[ t*4 + j ][0] = known_prot[ i * offset_know_prot + j*3 + 0 ];
+      ref_atoms[ t*4 + j ][1] = known_prot[ i * offset_know_prot + j*3 + 1 ];
+      ref_atoms[ t*4 + j ][2] = known_prot[ i * offset_know_prot + j*3 + 2 ];
       
       mov_xlist[ t*4 + j ][0] = my_prot[ i * 15 + j*3 + 0 ];
       mov_xlist[ t*4 + j ][1] = my_prot[ i * 15 + j*3 + 1 ];
@@ -543,14 +545,45 @@ Rmsd_fast::fast_rmsd(double ref_xlist[][3],
     q = (B*B - 3.0*C) / 9.0;
     q3 = q*q*q;
     r = (2.0*B*B*B - 9.0*B*C + 27.0*D) / 54.0;
-    theta = acos(r/sqrt(q3));
+    if ( (r/sqrt(q3)) <= -1 ) {
+      theta = PI_VAL;
+    }
+//    else if ( (r/sqrt(q3)) >= -1 ) {
+//      theta = 0;
+//    }
+    else {
+      theta = acos(r/sqrt(q3));
+    }
+    /*
+    std::cout << "r " << r << " q3 " << q3 << " sqrt(q3) "  << sqrt(q3) <<
+    " r/sqrt(q3) " << r/sqrt(q3) << " theta " << theta << std::endl;
+     */
     r1 = r2 = r3 = -2.0*sqrt(q);
     r1 *= cos(theta/3.0);
     r2 *= cos((theta + 2.0*PI_VAL) / 3.0);
     r3 *= cos((theta - 2.0*PI_VAL) / 3.0);
+    
     r1 -= B / 3.0;
     r2 -= B / 3.0;
     r3 -= B / 3.0;
+    /*
+    if ( (r1 < 0.00) || (0.00 < r1 < 0.009) ) {
+      r1 = 0.0;
+    }
+    if ( (r2 < 0.00) || (0.00 < r2 < 0.009) ) {
+      r2 = 0.0;
+    }
+    if ( (r3 < 0.00) || (0.00 < r3 < 0.009) ) {
+      r3 = 0.0;
+    }
+    */
+    /*
+    if ( true ) {
+      printf(" r1 %f, r2 %f r3 %f B %f d0 %f\n",
+             r1, r2, r3, B, d0 );
+      getchar();
+    }
+     */
   }
   
   /* undo the d0 norm to get eigenvalues */
@@ -574,14 +607,15 @@ Rmsd_fast::fast_rmsd(double ref_xlist[][3],
     r1 = r3;
   }
   
-  residual = Eo - sqrt(r1) - sqrt(r2) - omega*sqrt(rlow);
+  residual = Eo - sqrt(r1) - sqrt(r2) - omega*sqrt(fabs(rlow));
   *rmsd = sqrt( (double) residual*2.0 / ((double) n_list) );
   /*
-  std::cout << Eo << " " << sqrt(r1) << " " << sqrt(r2) << " " << omega << " " << sqrt(rlow) << std::endl;
+  std::cout << Eo << " " << sqrt(r1) << " " << sqrt(r2) << " " << omega << " " << sqrt(rlow) <<  " " << rlow <<std::endl;
   std::cout << residual*2.0 << " " << n_list << std::endl;
   std::cout << "RMSD " << *rmsd << std::endl;
   getchar();
    */
+  
 }
 
 

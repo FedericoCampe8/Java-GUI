@@ -1,7 +1,7 @@
 /*********************************************************************
  * Authors: Federico Campeotto (campe8@nmsu.edu)                     *
  *                                                                   *
- * (C) Copyright 2012-2013                                           *
+ * (C) Copyright 2013-2014                                           *
  *                                                                   *
  * This file is part of COCOS (COncurrent system with COnstraints    *
  * for protein Structure prediction).                                *
@@ -88,13 +88,7 @@ int main ( int argc, char* argv[] ) {
    ***************************************/
   cout << dbg << "Freeing memory" << endl;
   i_data.clear_data();
-  /*
-  g_logicvars.clear_variables();
-  for ( int i = 0; i < g_constraints.size(); i++ )
-    delete g_constraints[i];
-   g_constraints.clear();
-   supervisor_agt.~Supervisor();
-  */
+
   cout << dbg << "Memory freed." << endl;
   cout << dbg << "Exit from COCOS... \n";
 

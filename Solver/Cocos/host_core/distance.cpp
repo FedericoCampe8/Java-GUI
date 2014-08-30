@@ -34,7 +34,7 @@ distance ( real* beam_str, real* validity_solutions, int* distance_values, int l
       }
     }//threadIdx
     if ( scaling_factor > 0 )
-      validity_solutions[ blockIdx ] *= scaling_factor;
+      validity_solutions[ blockIdx ] += scaling_factor;
   }//blockIdx
 }//all_distant
 

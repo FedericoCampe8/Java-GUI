@@ -11,11 +11,7 @@ k_rang ( int v_id,
          real* all_domains, int* all_domains_idx,
          real* beam_str, real* beam_str_upd,
          int n_blocks, int n_threads, int smBytes ) {
-  /*
-   * @note: here all structures are valid
-   * int warp = WHICHWARP( blockIdx.x );
-   * if ( !(domain_states[ MAX_DIM * v_id + warp ] & ((uint) 1<<(blockIdx.x))) ) return;
-   */
+  // @note: here all structures are valid
   real local_curr_str[ n_threads * 15 ];
   real phi, psi;
   int selected_var_ca_pos = ( v_id * 5 + 1 ) * 3;

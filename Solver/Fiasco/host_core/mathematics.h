@@ -80,6 +80,18 @@ namespace Math{
   real exponential_moving_avg(real alpha,real current_val, real prev_avg);
 
   ReferenceSystem set_reference_system (point x, point y, point z);
+  
+  real bond_angle ( real* a, real* b, real* c );
+  real torsion_angle ( real* a, real* b, real* c, real* d );
+  void calculate_h_atom (const real *c, const real *n, const real *ca, real *h);
+  void calculate_cg_atom ( aminoacid a,
+                           real* ca1, real* ca2, real* ca3,
+                           real* cg, int* radius );
+  real centroid_torsional_angle ( aminoacid a );
+  real centroid_chi2 ( aminoacid a );
+  real centroid_distance ( aminoacid a );
+  int centroid_radius ( aminoacid a );
+  
 }
 
 #endif

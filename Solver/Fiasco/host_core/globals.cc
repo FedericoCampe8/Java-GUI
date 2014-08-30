@@ -23,6 +23,8 @@ std::vector<Constraint*> g_constraints;
 Output* g_output;
 Statistics* g_statistics;
 
+GLB_params g_params;
+
 // debug
 size_t g_jm_cluster_size;
 std::pair<size_t, int> g_mem (0,0);

@@ -6,109 +6,223 @@
 #include "tors_bmf.h"
 #include "utilities.h"
 #include "atom.h"
+#include "atom_grid.h"
+
+#include <getopt.h>
 
 //#define INPUT_DATA_DBG
 
 using namespace std;
 using namespace Utilities;
 
+/// Init static variable
+Input_data* Input_data::_instance = nullptr;
+
 Input_data::Input_data ( int argc, char* argv[] ) :
 _dbg              ( "#log: Input_data - " ),
 _know_prot        ( false ),
 _in_file          ( "" ),
 _out_file         ( "" ),
-_known_prot_file  ( "" ),
-_target_prot_file ( "" ) ,
-_target_sequence  ( "" ),
-_energy_charges   ( "" ),
-_lj_params        ( "" ),
-_h_distances      ( "" ),
-_h_angles         ( "" ),
-_contact_params   ( "" ),
-_tors_params      ( "" ),
-_angles_file      ( "" ) {
-  //Default values
-  gh_params.follow_rmsd     = false;
-  gh_params.verbose         = false;
-  gh_params.n_gibbs_samples = -1;
-  gh_params.n_coordinators  = 1;
-  gh_params.set_size        = MAX_GIBBS_SET_SIZE;
-  gh_params.timer           = -1;
-  gh_params.n_gibbs_iters_before_swap = 0;
-
-  // Process input
+_target_sequence  ( "" ) {
+  
+  /// Set default values/parameters
+  set_default_values ();
+  
+  /// Read input
   int c;
-  bool auto_allign = false;
-  while ( (c = getopt(argc, argv, "i:o:c:g:t:srhva")) != -1 ) {
+  int verbose_flag=0,  rmsd_flag=0,  allign_flag=0;
+  int centroid_flag=0, gibbs_flag=0, translate_flag=0;
+  while ( true ) {
+    static struct option long_options[] =
+    {
+      /* These options set a flag. */
+      {"verbose",       no_argument, &verbose_flag,           1}, /// Print verbose during search
+      {"rmsd",          no_argument, &rmsd_flag,              1}, /// Use RMSD as obj function
+      {"auto_allign",   no_argument, &allign_flag,            1}, /// Automatically find sec. structure
+      {"cg_constraint", no_argument, &centroid_flag,          1}, /// Set CGs
+      {"gibbs_default", no_argument, &gibbs_flag,             1}, /// Use Gibbs as default for coordinators agts
+      {"translate",     no_argument, &translate_flag,         1}, /// Translate 2nd atom of final prediction on (0, 0, 0)
+      {"random_moves",  no_argument, &gh_params.random_moves, 1}, /// Random translation/rotations peptide in docking analysis
+      /* These options don't set a flag.
+         We distinguish them by their indices. */
+      {"help",          no_argument,       0,       'h'}, /// Print a help message
+      {"input",         required_argument, 0,       'i'}, /// Set input file
+      {"output",        required_argument, 0,       'o'}, /// Set output file
+      {"angles",        required_argument, 0,       'a'}, /// Set the variables domains using [-180, +180] partitioned as specified
+      {"set_size",      required_argument, 0,       's'}, /// Set size of sampling sets
+      {"mc_timeout",    required_argument, 0,       'c'}, /// Set timeout for MonteCarlo sampling
+      {"docking",       required_argument, 0,       'k'}, /// Set minimum number of contacts for docking
+      {"gibbs",         required_argument, 0,       'g'}, /// Set number of Gibbs samples
+      {"gb_iterations", required_argument, 0,       't'}, /// Set number of iterations before swapping bins in Gibbs sampling
+      {0, 0, 0, 0}
+    };
+    
+    /* getopt_long stores the option index here. */
+    int option_index = 0;
+    c = getopt_long (argc, argv, "hvri:o:a:s:c:k:g:t:",
+                     long_options, &option_index);
+    /* Detect the end of the options. */
+    if ( c == -1 ) break;
+    /* Switch on c to detect the input given by the user */
     switch ( c ) {
-      case 'i':
-        /// Input file name
-        _in_file = optarg;
-        break;
-      case 'o':
-        /// Output file name (otherwise default one is used)
-        _out_file = optarg;
-        break;
-      case 'c':
-        /// Set clock timer for Montecarlo sampling
-        gh_params.timer = atoi ( optarg );
-      case 'r':
-        /// Use RMSD ad objective function
-        gh_params.follow_rmsd = true;
-        break;
-      case 'g':
-        /// Set number of Gibbs samples
-        gh_params.n_gibbs_samples = atoi ( optarg );
-        break;
-      case 's':
-        /// Set "set" size
-        gh_params.set_size = atoi ( optarg );
-        break;
-      case 't':
-        /// Set iters before swapping bins
-        gh_params.n_gibbs_iters_before_swap = atoi ( optarg );
-        break;
-      case 'a':
-        /// Automagically create an input file!
-        auto_allign = true;
-        break;
-      case 'v':
-        /// Verbose
-        gh_params.verbose = true;
+      case 0:
+        /* If this option set a flag, do nothing else now. */
+        if ( long_options[ option_index ].flag != 0 )
+          break;
+        printf ( "option %s", long_options[ option_index ].name );
+        if (optarg)
+          printf (" with arg %s", optarg);
+        printf ("\n");
         break;
       case 'h':
-        /// Print help
         print_help();
         exit( 0 );
+      case 'v':
+        verbose_flag = 1;
+        break;
+      case 'r':
+        gh_params.random_moves = 1;
+        break;
+      case 'i':
+        _in_file  = optarg;
+        break;
+      case 'o':
+        _out_file = optarg;
+        break;
+      case 'a':
+        gh_params.set_angles = atoi ( optarg );
+        break;
+      case 's':
+        gh_params.set_size = atoi ( optarg );
+        break;
+      case 'c':
+        gh_params.timer = atoi ( optarg );
+        break;
+      case 'k':
+        gh_params.sys_job         = docking;
+        gh_params.min_n_contacts  = atoi ( optarg );
+        break;
+      case 'g':
+        gh_params.n_gibbs_samples = atoi ( optarg );
+        break;
+      case 't':
+        gh_params.n_gibbs_iters_before_swap = atoi ( optarg );
+        break;
       default:
-        print_help();
         exit( 0 );
-    }
-  }
+    }//switch
+  }//while
   
-  /// Parse and get info from the input file
-  if ( _in_file == "" ) {
-    cout << "Use \"-i\" for input file\n";
-    exit( 0 );
+  /* Instead of reporting ‘--verbose’ as it is encountered,
+     we report the final status resulting from them. */
+  if ( verbose_flag   ) {
+    gh_params.verbose = true;
+    puts ("verbose flag is set");
   }
-  
-  if ( auto_allign ) {
+  if ( allign_flag    ) {
     create_input_file ();
     _in_file = "alignment.txt";
   }
+  if ( rmsd_flag      ) { gh_params.follow_rmsd = true;       }
+  if ( centroid_flag  ) { gh_params.centroid = true;          }
+  if ( gibbs_flag     ) { gh_params.gibbs_as_default = true;  }
+  if ( translate_flag ) { gh_params.translate_str_fnl = true; }
   
-  read_file ();
-  /// Init data
-  init_data ();
-  /// Print Global minimum
-  if ( _know_prot ) {
-    cout << _dbg << "Native Protein global minimum: " <<
-    gh_params.known_protein->get_minium_energy() << endl;
+  /* Print any remaining command line arguments (not options). */
+  if ( optind < argc ) {
+    printf ("non-option ARGV-elements: ");
+    while ( optind < argc )
+      printf ("%s ", argv[ optind++ ]);
+    putchar ('\n');
   }
-}//-
 
-Input_data::~Input_data () {
-}//-
+  /* Parse and get info from the input file */
+  if ( _in_file == "" ) {
+    print_help();
+    exit( 0 );
+  }
+  
+  /* Read input file */
+  read_file ();
+  
+  /* Init data structures */
+  init_data ();
+}//Input_data
+
+void
+Input_data::ask_for_seeds () {
+  cout << "Input_data::Docking - Please insert:\n";
+  cout << "x y z r h\n";
+  cout << "where\n";
+  cout << "x (real): x seed's coordinate\n";
+  cout << "y (real): y seed's coordinate\n";
+  cout << "z (real): z seed's coordinate\n";
+  cout << "r (real): half diagonal of the cube centered in (x, y, z)\n";
+  cout << "h (int) : height of the octree (i.e., number of partitions)\n";
+  cout << "Press Enter to insert a new seed.\n";
+  cout << "Write \"remove\" to remove the last inserted seed or \"done\" to exit.\n";
+  
+  /// Read input from user
+  string line = "";
+  vector < real > coords;
+  /// Start reading input from user
+  getline ( cin, line );
+  while ( line.compare( "done" ) != 0 ) {
+    if ( (line.compare( "remove" ) == 0) &&
+         (gh_params.seed_coords.size() > 0) ) {
+      gh_params.seed_coords.pop_back();
+    }
+    else {
+      stringstream stream( line );
+      real n;
+      int parsed_val = 0;
+      while( 1 ) {
+        stream >> n;
+        parsed_val++;
+        if( (!stream) || (parsed_val >= 5) ) break;
+        coords.push_back( n );
+      }
+      if ( parsed_val == 5 ) {
+        coords.push_back( 4 );
+      }
+      gh_params.seed_coords.push_back( coords );
+      coords.clear();
+    }
+    getline ( cin, line );
+  }
+  /// User error check
+  if ( gh_params.seed_coords.size() == 0 ) {
+    cout << "Please, insert at least one seed!\n";
+    exit( 2 );
+  }
+}//ask_for_seeds
+
+void
+Input_data::set_default_values () {
+  g_docking                   = nullptr;
+  g_atom_grid                 = nullptr;
+  gh_params.known_protein     = nullptr;
+  gh_params.sys_job           = ab_initio;
+  gh_params.gibbs_as_default  = false;
+  gh_params.follow_rmsd       = false;
+  gh_params.verbose           = false;
+  gh_params.centroid          = false;
+  gh_params.translate_str     = false;
+  gh_params.translate_str_fnl = false;
+  gh_params.atom_grid         = false;
+  gh_params.set_angles        = -1;
+  gh_params.n_gibbs_samples   = -1;
+  gh_params.timer             = -1;
+  gh_params.min_n_contacts    = -1;
+  gh_params.random_moves      = 0;
+  gh_params.n_coordinators    = 1;
+  gh_params.num_models        = 1;
+  gh_params.translation_point[ 1 ]    = 0;
+  gh_params.translation_point[ 2 ]    = 0;
+  gh_params.translation_point[ 3 ]    = 0;
+  gh_params.n_gibbs_iters_before_swap = 0;
+  gh_params.set_size                  = MAX_GIBBS_SET_SIZE;
+}//set_default_values
 
 void
 Input_data::clear_data () {
@@ -135,8 +249,8 @@ Input_data::clear_data () {
   free ( gh_params.tors );
   free ( gh_params.tors_corr );
   free ( gh_params.beam_energies );
-  if ( gh_params.follow_rmsd )
-    free ( gh_params.known_bb_coordinates );
+  if ( _know_prot )
+  free ( gh_params.known_bb_coordinates );
   
   /// Free memory aux
   free_dt ();
@@ -151,8 +265,21 @@ Input_data::create_input_file () {
   
   pid_t pid=fork();
   if (pid==0) { /// child process
-    static char *argv[]={"jnet","-p", cstr, NULL};
-    execv("./bin_jnet/jnet",argv);
+    string prg_name = "jnet";
+    string prg_opts = "-s";
+    
+    char *prg_name_nc = new char[ prg_name.length() + 1 ];
+    strcpy ( prg_name_nc, prg_name.c_str() );
+    
+    char *prg_opts_nc = new char[ prg_opts.length() + 1 ];
+    strcpy ( prg_opts_nc, prg_opts.c_str() );
+    
+    static char *argv[] = { prg_name_nc, prg_opts_nc, cstr, NULL };
+    execv( "./bin_jnet/jnet",argv );
+    
+    delete [] prg_name_nc;
+    delete [] prg_opts_nc;
+    
     exit(127); /// only if execv fails
   }
   else { /// pid!=0; parent process
@@ -211,9 +338,9 @@ Input_data::create_input_file () {
     exit( 1 );
   }
   
+  fprintf( fid, "AB_INITIO\n" );
   fprintf( fid, ">FASTA SEQUENCE\n" );
   fprintf( fid, "%s", line_fasta.c_str() );
-  cout << " FASTA SEQUENCE " << line_fasta << " " << endl;
   fprintf( fid, "\n");
 
   /// Analyze alligned string "line_allign"
@@ -278,228 +405,108 @@ Input_data::create_input_file () {
   fclose(fid);
 }//create_input_file
 
+/*
+ * Read input file provided by the user
+ * and set appropriate data structures
+ * and file paths.
+ */
 void
 Input_data::read_file () {
-  string line;
-  string token;
-  char * pch;
-  int value, start = 12;   // Value taken from the format of the input file
-  int lw_priority = LOWER_PRIORITY/2;
-  int energy_parameters_read = 0;
-  
-  ifstream inputFile;
-  char * fname = (char*) malloc ( (_in_file.size() + 1) * sizeof(char) );
-  strcpy( fname, _in_file.c_str() );
-  inputFile.open( fname );
+  ifstream inputFile ( _in_file, std::ifstream::in );
   if( inputFile.is_open() ){
-    while ( inputFile.good() ){
-      getline ( inputFile, line );
-      /// Target on FASTA format
-      if ( line.compare( 0, 1, ">" ) == 0 ) {
-        getline ( inputFile, line );
-        set_target_sequence ( line );
+    string line;
+    string docking_str   = "DOCKING";
+    string ab_initio_str = "AB_INITIO";
+    getline ( inputFile, line );
+    /*
+     * The first line specifies if the tool is doing
+     * Ab_initio prediction or docking.
+     */
+    size_t found_docking   = line.find( docking_str );
+    size_t found_ab_initio = line.find( ab_initio_str );
+    if ( found_ab_initio != string::npos ) {
+      /// Proceed with parsing for ab_initio
+      parse_for_ab_initio ( inputFile );
+    }
+    else if ( found_docking != string::npos ) {
+      /// Proceed with parsing for docking
+      gh_params.sys_job = docking;
+      parse_for_docking ( inputFile );
+    }
+    else {
+      cout
+      << "Please, specify the type of analysis "
+      << "to perform (either AB_INITIO or DOCKING):"
+      << endl;
+      /// Read input from user
+      getline ( cin, line );
+      while ( (line.compare( docking_str )   != 0) &&
+              (line.compare( ab_initio_str ) != 0) ) {
+        cout
+        << "Please, specify the type of analysis "
+        << "to perform (either AB_INITIO or DOCKING), read "
+        << line
+        << endl;
+        getline ( cin, line );
       }
-      /// Target on pdb
-      else if ( line.compare( 0, 10, "KNOWN_PROT" ) == 0 ) {
-        _known_prot_file = line.substr( start, line.size() - start );
-        _known_prot_file += ".pdb";
-        _know_prot = true;
+      if ( line.compare( ab_initio_str ) == 0 ) {
+        /// Proceed with parsing for ab_initio
+        parse_for_ab_initio ( inputFile );
       }
-      else if ( line.compare( 0, 11, "TARGET_PROT" ) == 0 ) {
-        _target_prot_file = line.substr( start, line.size() - start );
-        _target_prot_file += ".pdb";
+      else {
+        /// Proceed with parsing for docking
+        gh_params.sys_job = docking;
+        parse_for_docking ( inputFile );
       }
-      /// Energy Tables
-      else if ( line.compare( 0, 10, "COULOMBPAR" ) == 0 ) {
-        _energy_charges = line.substr( start, line.size() - start );
-        energy_parameters_read++;
-      }
-      else if ( line.compare( 0, 11, "LJPARAMETER" ) == 0 ) {
-        _lj_params = line.substr( start, line.size() - start );
-        energy_parameters_read++;
-      }
-      else if ( line.compare( 0, 11, "HDPARAMETER" ) == 0 ) {
-        _h_distances = line.substr( start, line.size() - start );
-        energy_parameters_read++;
-      }
-      else if ( line.compare( 0, 11, "HAPARAMETER" ) == 0 ) {
-        _h_angles = line.substr( start, line.size() - start );
-        energy_parameters_read++;
-      }
-      else if ( line.compare( 0, 7, "CONTACT" ) == 0 ) {
-        _contact_params = line.substr( start, line.size() - start );
-        energy_parameters_read++;
-      }
-      else if ( line.compare( 0, 7, "TORSPAR" ) == 0 ) {
-        _tors_params = line.substr( start, line.size() - start );
-        energy_parameters_read++;
-      }
-      else if (line.compare( 0, 6, "ANGLES" ) == 0 ) {
-        _angles_file = line.substr(start, line.size() - start);
-        energy_parameters_read++;
-      }
-      /// Secondary Structure Descriptions, Agents, and Priorities
-      else if ( line.compare( 0, 2, "H " ) == 0 ||
-                line.compare( 0, 2, "S " ) == 0 ||
-                line.compare( 0, 2, "E " ) == 0 ||
-                line.compare( 0, 2, "C " ) == 0 ||
-                line.compare( 0, 2, "T " ) == 0 ||
-                line.compare( 0, 2, "A " ) == 0 ) {
-        MasAgentDes agt_description;
-        char* char_line = (char*) malloc ( (line.size() + 1) * sizeof(char) );
-        strcpy( char_line, line.c_str() );
-        pch = strtok (char_line, " ,.-[]");
-        
-        int  first_v = -1;
-        int  first_s = -1;
-        agt_description.priority = -1;
-        agt_description.quantum = MAX_QUANTUM;
-        bool p_found = false; // Priority
-        bool s_found = false; // Scope
-        bool q_found = false; // Quantum of time 
-        ss_type  t_found = other;
-        while ( pch != NULL ) {
-          if ( !p_found && !s_found && !q_found ) {
-            if ( pch[0] > 47 && pch[0] < 58 ) {
-              value = atoi( pch );
-              if ( first_v == -1 ) {
-                first_v = value;
-              }
-              else { 
-                agt_description.vars_bds.push_back ( make_pair ( first_v, value ) );
-                first_v = -1;
-              }
-            }
-          }
-          else if ( p_found ) {
-            if ( pch[0] > 47 && pch[0] < 58 ) {
-              agt_description.priority = atoi( pch );
-              // At most one priority value
-              p_found = false;
-            }
-          }
-          else if ( q_found ) {
-            if ( pch[0] > 47 && pch[0] < 58 ) {
-              agt_description.quantum = atoi( pch );
-              // At most one quantum value
-              q_found = false;
-            }
-          }
-          else if ( s_found ) {
-            if ( pch[0] > 47 && pch[0] < 58 ) {
-              value = atoi( pch );
-              if ( first_s == -1 ) {
-                first_s = value;
-              }
-              else {
-                agt_description.scope.first  = first_s;
-                agt_description.scope.second = value;
-              }
-            }
-          }
-          
-          if ( pch[0] == 'p') p_found = true;
-          if ( pch[0] == 's') s_found = true;
-          if ( pch[0] == 'q') q_found = true;
-          if ( pch[0] == 'T' ) t_found = turn;
-          if ( pch[0] == 'C' ) t_found = coil;
-          
-          pch = strtok (NULL, " ,.-[]");
-        }//while
-
-        if ( (!p_found) && (agt_description.priority < 0) ) {
-          agt_description.priority = lw_priority;
-          lw_priority++;
-        }
-        if ( !s_found ) {
-          agt_description.scope.first  = -1;
-          agt_description.scope.second = -1;
-        }
-        
-        if ( line.compare( 0, 2, "H " ) == 0 ) {
-          agt_description.sec_str_type = helix;
-          agt_description.agt_type = structure;
-        }
-        if ( (line.compare( 0, 2, "S " ) == 0) ||
-             (line.compare( 0, 2, "E " ) == 0) ) {
-          agt_description.sec_str_type = sheet;
-          agt_description.agt_type = structure;
-        }
-        if ( line.compare( 0, 2, "C " ) == 0 ) {
-          agt_description.sec_str_type = coil;
-          agt_description.agt_type = coordinator;
-        }
-        if ( line.compare( 0, 2, "T " ) == 0 ) {
-          agt_description.sec_str_type = turn;
-          agt_description.agt_type = coordinator;
-        }
-        if ( line.compare( 0, 2, "A " ) == 0 ) {
-          agt_description.sec_str_type = t_found;
-          agt_description.agt_type = coordinator;
-          gh_params.n_coordinators++;
-        }
-        for ( int i = 0; i < agt_description.vars_bds.size(); i++ ) {
-          int first_aa = agt_description.vars_bds[ i ].first;
-          int last_aa  = agt_description.vars_bds[ i ].second;
-          for ( int j = first_aa; j <= last_aa ; j++ ) 
-            agt_description.vars_list.push_back ( j );
-        }
-        /// Search strategy
-        std::string key_icm ("icm");
-        std::string key_montecarlo ("montecarlo");
-        std::string key_gibbs ("gibbs");
-        std::string key_complete ("complete");
-        size_t found_icm        = line.rfind( key_icm );
-        size_t found_montecarlo = line.rfind( key_montecarlo );
-        size_t found_gibbs      = line.rfind( key_gibbs );
-        size_t found_complete   = line.rfind( key_complete );
-        bool something_found = false;
-        if ( (found_icm != std::string::npos) && (!something_found) ) {
-          agt_description.search_strategy = icm;
-          something_found = true;
-        }
-        if ( (found_montecarlo != std::string::npos) && (!something_found) ) {
-          agt_description.search_strategy = montecarlo;
-          something_found = true;
-        }
-        if ( (found_gibbs != std::string::npos) && (!something_found) ) {
-          agt_description.search_strategy = gibbs;
-          something_found = true;
-        }
-        if ( (found_complete != std::string::npos) && (!something_found) ) {
-          agt_description.search_strategy = complete;
-          something_found = true;
-        }
-        
-        if ( agt_description.agt_type == structure ) {
-          agt_description.search_strategy = icm;
-        }
-        /// Default search strategy for coordinator agent: Montecarlo sampling
-        if ( (!something_found) && (agt_description.agt_type == coordinator) ) {
-          agt_description.search_strategy = montecarlo;
-        }
-        /// Store agent description
-        gh_params.mas_des.push_back ( agt_description );
-        free (char_line);
-      }
-    }//while
-    inputFile.close();
-    if ( gh_params.verbose ) dump ();
-  } 
+    }
+  }
   else {
-    cout << _dbg << "unable to open " << _in_file << " " << endl;
-    free( fname );
+    cout << _dbg << "Unable to open " << _in_file << endl;
     exit( 1 );
   }
-  
-  /// Default values
-  //if ( _out_file == "" ) _out_file = "fold.out";
-  if ( gh_params.follow_rmsd && (!_know_prot) ) {
-    cout << _dbg << "Follow RMSD option not enable: set known protein first\n";
-    gh_params.follow_rmsd = false;
-  }
-  /// Set default input parameters (tables)
-  if ( (!energy_parameters_read) || (energy_parameters_read < 7) ) {
+  /// Close ifstream
+  inputFile.close ();
+}//read_file
+
+void
+Input_data::parse_for_ab_initio ( istream& inputFile ) {
+  /// Set position to the beginning of the file
+  inputFile.seekg ( 0, inputFile.beg );
+  string line;
+  int start = 12;
+  while ( inputFile.good() ) {
+    getline ( inputFile, line );
+    if ( (line.compare( "DOCKING" )   == 0) ||
+         (line.compare( "AB_INITIO" ) == 0) ) {
+      continue;
+    }
+    /*
+     * Target on FASTA format
+     * e.g.,
+     * >SEQUENCE_1
+     * MTEITAAMVKELRES...
+     */
+    if ( line.compare( 0, 1, ">" ) == 0 ) {
+      getline ( inputFile, line );
+      set_target_sequence ( line );
+    }
+    ///  Read target / known_prot info (i.e., paths)
+    if ( ((line.compare( 0, 10, "KNOWN_PROT" )  == 0)  ||
+          (line.compare( 0, 11, "TARGET_PROT" ) == 0)) &&
+         (!_know_prot) )  {
+      start = line.find_first_of ( " " );
+      start++;
+      _known_prot_file = line.substr( start, line.size() - start );
+      _known_prot_file += ".pdb";
+      _know_prot = true;
+      continue;
+    }
+    set_database ( line );
+    /// Secondary Structure Descriptions, Agents, and Priorities
+    set_agents ( line );
+  }//while
+  /// Set default values for databases
+  if ( set_database ( "" ) < 7 ) {
     _energy_charges = "config/coulomb.csv";
     _lj_params      = "config/lenard_jones.csv";
     _h_distances    = "config/h_distances.csv";
@@ -508,10 +515,386 @@ Input_data::read_file () {
     _tors_params    = "config/table_corr.pot";
     _angles_file    = "config/3combination";
   }
-  /// Free resources
-  inputFile.close ();
-  free( fname );
-}//read_file
+  /// Consistency check
+  if ( gh_params.follow_rmsd && (!_know_prot) ) {
+    cout << _dbg << "Follow RMSD option not enable: set known protein.\n";
+    gh_params.follow_rmsd = false;
+  }
+}//parse_for_ab_initio
+
+void
+Input_data::parse_for_docking ( istream& inputFile ) {
+  /// Set position to the beginning of the file
+  inputFile.seekg ( 0, inputFile.beg );
+  string line;
+  int start = 12;
+  bool seed_found = false;
+  while ( inputFile.good() ) {
+    getline ( inputFile, line );
+    if ( (line.compare( "DOCKING" )   == 0) ||
+         (line.compare( "AB_INITIO" ) == 0) ) {
+      continue;
+    }
+    ///  Read target / known_prot info (i.e., paths)
+    if ( ((line.compare( 0, 10, "KNOWN_PROT" )  == 0)  ||
+          (line.compare( 0, 11, "TARGET_PROT" ) == 0)  ||
+          (line.compare( 0, 7,  "PEPTIDE" ) == 0) ) &&
+        (!_know_prot) )  {
+      start = line.find_first_of ( " " );
+      start++;
+      _known_prot_file = line.substr( start, line.size() - start );
+      _known_prot_file += ".pdb";
+      _know_prot = true;
+      continue;
+    }
+    if ( line.compare( 0, 4, "SEED" )  == 0 ) {
+      seed_found = true;
+      start = line.find_first_of ( " " );
+      start++;
+      line = line.substr( start, line.size() - start );
+
+      stringstream stream( line );
+      real n;
+      int parsed_val = 0;
+      vector < real > coords;
+      while( 1 ) {
+        stream >> n;
+        parsed_val++;
+        if( (!stream) || (parsed_val > 5) ) break;
+        coords.push_back( n );
+      }
+      if ( coords.size() == 4 ) {
+        coords.push_back( 4 );
+      }
+      gh_params.seed_coords.push_back( coords );
+      coords.clear();
+      continue;
+    }// seed
+    set_database ( line );
+    set_dock_constraints ( line );
+  }//while
+  /// Set default values for databases
+  if ( set_database ( "" ) < 7 ) {
+    _energy_charges = "config/coulomb.csv";
+    _lj_params      = "config/lenard_jones.csv";
+    _h_distances    = "config/h_distances.csv";
+    _h_angles       = "config/h_angles.csv";
+    _contact_params = "config/contact.csv";
+    _tors_params    = "config/table_corr.pot";
+    _angles_file    = "config/3combination";
+  }
+  /// Consistency check
+  if ( gh_params.follow_rmsd && (!_know_prot) ) {
+    cout << _dbg << "Follow RMSD option not enable: set known protein.\n";
+    gh_params.follow_rmsd = false;
+  }
+  if ( g_docking == nullptr ) {
+    cout << _dbg << " Set docking file for docking grid.\n";
+    exit( 2 );
+  }
+  /// Read seeds for docking from user
+  if ( (!seed_found) && (!gh_params.translate_str) ) {
+    ask_for_seeds ();
+  }
+  /// Set default value
+  if ( gh_params.min_n_contacts == -1 ) {
+    gh_params.min_n_contacts = 4;
+    if ( gh_params.force_contact.size() > gh_params.min_n_contacts ) {
+      gh_params.min_n_contacts = gh_params.force_contact.size();
+    }
+  }
+  
+}//parse_for_docking
+
+int
+Input_data::set_database ( string line ) {
+  static int energy_parameters_read = 0;
+  
+  int start = 12;   // Value taken from the format of the input file
+  if ( energy_parameters_read == 7 ) { return energy_parameters_read; }
+  start = line.find_first_of ( " " );
+  start++;
+  if ( line.compare( 0, 10, "COULOMBPAR" ) == 0 ) {
+    _energy_charges = line.substr( start, line.size() - start );
+    start = _energy_charges.find_first_not_of ( " " );
+    _energy_charges = _energy_charges.substr(start, _energy_charges.size() - start);
+    energy_parameters_read++;
+  }
+  else if ( line.compare( 0, 11, "LJPARAMETER" ) == 0 ) {
+    _lj_params = line.substr( start, line.size() - start );
+    start = _lj_params.find_first_not_of ( " " );
+    _lj_params = _lj_params.substr(start, _lj_params.size() - start);
+    energy_parameters_read++;
+  }
+  else if ( line.compare( 0, 11, "HDPARAMETER" ) == 0 ) {
+    _h_distances = line.substr( start, line.size() - start );
+    start = _h_distances.find_first_not_of ( " " );
+    _h_distances = _h_distances.substr(start, _h_distances.size() - start);
+    energy_parameters_read++;
+  }
+  else if ( line.compare( 0, 11, "HAPARAMETER" ) == 0 ) {
+    _h_angles = line.substr( start, line.size() - start );
+    start = _h_angles.find_first_not_of ( " " );
+    _h_angles = _h_angles.substr(start, _h_angles.size() - start);
+    energy_parameters_read++;
+  }
+  else if ( line.compare( 0, 7, "CONTACT" ) == 0 ) {
+    _contact_params = line.substr( start, line.size() - start );
+    start = _contact_params.find_first_not_of ( " " );
+    _contact_params = _contact_params.substr(start, _contact_params.size() - start);
+    energy_parameters_read++;
+  }
+  else if ( line.compare( 0, 7, "TORSPAR" ) == 0 ) {
+    _tors_params = line.substr( start, line.size() - start );
+    start = _tors_params.find_first_not_of ( " " );
+    _tors_params = _tors_params.substr(start, _tors_params.size() - start);
+    energy_parameters_read++;
+  }
+  else if (line.compare( 0, 6, "ANGLES" ) == 0 ) {
+    _angles_file = line.substr(start, line.size() - start);
+    start = _angles_file.find_first_not_of ( " " );
+    _angles_file = _angles_file.substr(start, _angles_file.size() - start);
+    energy_parameters_read++;
+  }
+  return energy_parameters_read;
+}//set_database
+
+void
+Input_data::set_agents ( string line ) {
+  char * pch;
+  int value;
+  static int lw_priority = LOWER_PRIORITY/2;
+  if ( line.compare( 0, 2, "H " ) == 0 ||
+       line.compare( 0, 2, "S " ) == 0 ||
+       line.compare( 0, 2, "E " ) == 0 ||
+       line.compare( 0, 2, "C " ) == 0 ||
+       line.compare( 0, 2, "T " ) == 0 ||
+       line.compare( 0, 2, "A " ) == 0 ) {
+    MasAgentDes agt_description;
+    char* char_line = (char*) malloc ( (line.size() + 1) * sizeof(char) );
+    strcpy( char_line, line.c_str() );
+    pch = strtok (char_line, " ,.-[]");
+    
+    int  first_v = -1;
+    int  first_s = -1;
+    agt_description.priority = -1;
+    agt_description.quantum = MAX_QUANTUM;
+    bool p_found = false; // Priority
+    bool s_found = false; // Scope
+    bool q_found = false; // Quantum of time
+    ss_type  t_found = other;
+    while ( pch != NULL ) {
+      if ( !p_found && !s_found && !q_found ) {
+        if ( pch[0] > 47 && pch[0] < 58 ) {
+          value = atoi( pch );
+          if ( first_v == -1 ) {
+            first_v = value;
+          }
+          else {
+            agt_description.vars_bds.push_back ( make_pair ( first_v, value ) );
+            first_v = -1;
+          }
+        }
+      }
+      else if ( p_found ) {
+        if ( pch[0] > 47 && pch[0] < 58 ) {
+          agt_description.priority = atoi( pch );
+          // At most one priority value
+          p_found = false;
+        }
+      }
+      else if ( q_found ) {
+        if ( pch[0] > 47 && pch[0] < 58 ) {
+          agt_description.quantum = atoi( pch );
+          // At most one quantum value
+          q_found = false;
+        }
+      }
+      else if ( s_found ) {
+        if ( pch[0] > 47 && pch[0] < 58 ) {
+          value = atoi( pch );
+          if ( first_s == -1 ) {
+            first_s = value;
+          }
+          else {
+            agt_description.scope.first  = first_s;
+            agt_description.scope.second = value;
+          }
+        }
+      }
+      
+      if ( pch[0] == 'p') p_found = true;
+      if ( pch[0] == 's') s_found = true;
+      if ( pch[0] == 'q') q_found = true;
+      if ( pch[0] == 'T' ) t_found = turn;
+      if ( pch[0] == 'C' ) t_found = coil;
+      
+      pch = strtok (NULL, " ,.-[]");
+    }//while
+    
+    if ( (!p_found) && (agt_description.priority < 0) ) {
+      agt_description.priority = lw_priority;
+      lw_priority++;
+    }
+    if ( !s_found ) {
+      agt_description.scope.first  = -1;
+      agt_description.scope.second = -1;
+    }
+    
+    if ( line.compare( 0, 2, "H " ) == 0 ) {
+      agt_description.sec_str_type = helix;
+      agt_description.agt_type = structure;
+    }
+    if ( (line.compare( 0, 2, "S " ) == 0) ||
+        (line.compare( 0, 2, "E " ) == 0) ) {
+      agt_description.sec_str_type = sheet;
+      agt_description.agt_type = structure;
+    }
+    if ( line.compare( 0, 2, "C " ) == 0 ) {
+      agt_description.sec_str_type = coil;
+      agt_description.agt_type = coordinator;
+    }
+    if ( line.compare( 0, 2, "T " ) == 0 ) {
+      agt_description.sec_str_type = turn;
+      agt_description.agt_type = coordinator;
+    }
+    if ( line.compare( 0, 2, "A " ) == 0 ) {
+      agt_description.sec_str_type = t_found;
+      agt_description.agt_type = coordinator;
+      gh_params.n_coordinators++;
+    }
+    for ( int i = 0; i < agt_description.vars_bds.size(); i++ ) {
+      int first_aa = agt_description.vars_bds[ i ].first;
+      int last_aa  = agt_description.vars_bds[ i ].second;
+      for ( int j = first_aa; j <= last_aa ; j++ )
+        agt_description.vars_list.push_back ( j );
+    }
+    /// Search strategy
+    std::string key_icm ("icm");
+    std::string key_montecarlo ("montecarlo");
+    std::string key_gibbs ("gibbs");
+    std::string key_complete ("complete");
+    size_t found_icm        = line.rfind( key_icm );
+    size_t found_montecarlo = line.rfind( key_montecarlo );
+    size_t found_gibbs      = line.rfind( key_gibbs );
+    size_t found_complete   = line.rfind( key_complete );
+    bool something_found = false;
+    if ( (found_icm != std::string::npos) && (!something_found) ) {
+      agt_description.search_strategy = icm;
+      something_found = true;
+    }
+    if ( (found_montecarlo != std::string::npos) && (!something_found) ) {
+      agt_description.search_strategy = montecarlo;
+      something_found = true;
+    }
+    if ( (found_gibbs != std::string::npos) && (!something_found) ) {
+      agt_description.search_strategy = gibbs;
+      something_found = true;
+    }
+    if ( (found_complete != std::string::npos) && (!something_found) ) {
+      agt_description.search_strategy = complete;
+      something_found = true;
+    }
+    
+    if ( agt_description.agt_type == structure ) {
+      agt_description.search_strategy = icm;
+    }
+    /// Default search strategy for coordinator agent: Montecarlo sampling
+    if ( (!something_found) && (agt_description.agt_type == coordinator) ) {
+      if ( gh_params.gibbs_as_default ) {
+        agt_description.search_strategy = gibbs;
+      }
+      else {
+        agt_description.search_strategy = montecarlo;
+      }
+    }
+    /// Store agent description
+    gh_params.mas_des.push_back ( agt_description );
+    free (char_line);
+  }
+}//set_agents
+
+void
+Input_data::set_dock_constraints ( string line ) {
+  if (line.compare( 0, 9, "TRANSLATE" ) == 0 ) {
+    gh_params.translate_str = true;
+    size_t found = (line.substr( 9, line.size() )).find_first_not_of(" ");
+    found += 9;
+    if ( line[ found+1 ] == ' ') {
+      /// N, H, C, O
+      gh_params.translation_point[ 0 ] = Utilities::cv_string_to_atom_type( line.substr( found, 2 ) );
+      found += 2;
+    }
+    else {
+      /// CA
+      gh_params.translation_point[ 0 ] = Utilities::cv_string_to_atom_type( line.substr( found, 3 ) );
+      found += 3;
+    }
+    
+    std::stringstream stream( line.substr( found, line.size() ) );
+    
+    double n;
+    int parsed_val = 0;
+    while( 1 ) {
+      stream >> n;
+      if( !stream ) break;
+      if ( !parsed_val ) {
+        gh_params.translation_point[ 0 ] += n*5;
+      }
+      else {
+        gh_params.translation_point[ parsed_val ] = n;
+      }
+      parsed_val++;
+    }
+  }
+  if (line.compare( 0, 9, "ATOM_GRID" ) == 0 ) {
+    size_t found = (line.substr( 9, line.size() )).find_first_not_of(" ");
+    found += 9;
+    _atom_grid_file = line.substr(found, line.size() - found);
+    gh_params.atom_grid = true;
+    g_atom_grid = new AtomGrid ( 1, 0.25 );
+    g_atom_grid->fill_grid ( _atom_grid_file );
+  }
+  if (line.compare( 0, 9, "DOCK_GRID" ) == 0 ) {
+    size_t found     = (line.substr( 9, line.size() )).find_first_not_of(" ");
+    found += 9;
+    size_t found_aux = (line.substr( found, line.size() )).find_first_of(" ");
+    string docking_file = line.substr(found, found_aux );
+    int contact_distance = atoi((line.substr( found+found_aux+1, line.size() )).c_str());
+    if ( !contact_distance ) { contact_distance = 3; }
+    contact_distance *= -1;
+    /*
+     * Contact distance:
+     * -3 Angstrom: if two atoms are less than 3 angstrom (but not clash)
+     * then there is a contact (i.e., atom_grid returns false).
+     */
+    g_docking = new AtomGrid ( 1, contact_distance );
+    g_docking->fill_grid ( docking_file );
+  }
+  if (line.compare( 0, 12, "DOCK_CONTACT" ) == 0 ) {
+    size_t found     = (line.substr( 12, line.size() )).find_first_not_of(" ");
+    found += 12;
+    size_t found_aux = (line.substr( found, line.size() )).find_first_of(" ");
+    string dock_con_vals = line.substr(found, line.size() );
+    // Read values
+    istringstream istr( dock_con_vals );
+
+    real peptide_atom;
+    real dist_min, dist_max;
+    real dock_x, dock_y, dock_z;
+    istr >> dist_min >> dist_max >> peptide_atom >> dock_x >> dock_y >> dock_z;
+    vector< real > dock_contacts;
+    dock_contacts.push_back ( dist_min );
+    dock_contacts.push_back ( dist_max );
+    dock_contacts.push_back ( peptide_atom );
+    dock_contacts.push_back ( dock_x );
+    dock_contacts.push_back ( dock_y );
+    dock_contacts.push_back ( dock_z );
+    
+    gh_params.force_contact.push_back ( dock_contacts );
+  }
+  
+}//set_dock_constraints
 
 bool
 Input_data::know_prot () const {
@@ -532,24 +915,17 @@ void
 Input_data::init_data () {
   /// Output file
   gh_params.output_file = _out_file;
+  
   /// Energy Weights (default values)
   gh_params.minimum_energy   = 0;
   gh_params.str_weights[ 0 ] = 0.8; ///1.2
   gh_params.str_weights[ 1 ] = 0.01;
   gh_params.str_weights[ 2 ] = 0.7;
-  
+
   gh_params.crd_weights[ 0 ] = 8;
   gh_params.crd_weights[ 1 ] = 22;  //25;
   gh_params.crd_weights[ 2 ] = 7;   //3;
-  
-//  gh_params.crd_weights[ 0 ] = 8;
-//  gh_params.crd_weights[ 1 ] = 25;  //25;
-//  gh_params.crd_weights[ 2 ] = 3;   //3;
-  
-//  gh_params.crd_weights[ 0 ] = 4; //8
-//  gh_params.crd_weights[ 1 ] = 25;  //25; 22
-//  gh_params.crd_weights[ 2 ] = 3/50.0;   //3;
-  
+
   /// Load Known Protein and Target sequence
   if ( _know_prot && ( _target_sequence.compare( "" ) == 0 ) ) {
     gh_params.known_protein  = new Protein();
@@ -562,17 +938,19 @@ Input_data::init_data () {
     gh_params.target_protein->set_sequence( _target_sequence );
   }
   else {
-    cout << _dbg << "Set FASTA for target\n";
+    cout << _dbg << "Set FASTA for target or provide a known protein pdb file.\n";
     exit(2);
   }
+
   if ( gh_params.verbose ) gh_params.target_protein->print_sequence ();
   
   gh_params.n_res    = gh_params.target_protein->get_nres();
   gh_params.n_points = gh_params.n_res * 15;
   assert ( gh_params.n_res <= MAX_TARGET_SIZE );
+
+  int bb_len = (int) gh_params.target_protein->get_bblen();
   
-  if ( gh_params.follow_rmsd ) {
-    int bb_len = (int) gh_params.target_protein->get_bblen();
+  if (_know_prot) {
     gh_params.known_bb_coordinates = (real *) malloc( 3 * bb_len * sizeof(real) );
     for (uint i = 0; i < bb_len; i++)
       for (int j = 0; j < 3; j++)
@@ -597,6 +975,7 @@ Input_data::init_data () {
     
     if ( !to_break ) last_agent.push_back( i );
   }//i
+  
   if ( last_agent.size() > 0 ) {
     MasAgentDes agt_description;
     agt_description.agt_type = coordinator;
@@ -608,7 +987,12 @@ Input_data::init_data () {
     for ( int i = 0; i < last_agent.size(); i++)
       agt_description.vars_list.push_back( last_agent[ i ] );
     /// Default search strategy: Montecarlo sampling
-    agt_description.search_strategy = montecarlo;
+    if ( gh_params.gibbs_as_default ) {
+      agt_description.search_strategy = gibbs;
+    }
+    else {
+      agt_description.search_strategy = montecarlo;
+    }
     
     gh_params.mas_des.push_back( agt_description );
     last_agent.clear();
@@ -616,7 +1000,6 @@ Input_data::init_data () {
   /// Null pointers to indentify which array is used (set not NULL later if used)
   gd_params.beam_str     = NULL;
   gd_params.beam_str_upd = NULL;
-  
   Utilities::print_debug ( _dbg, "Loading angles table" );
   load_angles ();
   load_angles_aux ();
@@ -753,8 +1136,12 @@ Input_data::load_angles() {
   in_file.close();
 }//load_angles
 
-// Note: this is an auxiliary function
-// Angles for coordinator agent
+/* 
+ * @note: this is an auxiliary function.
+ * It sets Angles for coordinator agent
+ * considering a different set of angles 
+ * (i.e., different input format).
+ */
 void
 Input_data::load_angles_aux() {
   ifstream in_file;
@@ -970,7 +1357,6 @@ Input_data::free_dt () {
     free( gd_params.known_prot );
 }//free_dt
 
-
 void
 Input_data::read_energy_parameters ( string file_name, vector< vector<real> >& param_v ) {
   string line;
@@ -1105,27 +1491,59 @@ Input_data::dump () {
   cout << _dbg << "Angles file           : " << _angles_file << endl;
   cout << _dbg << "Protein Known  ref    : " << _known_prot_file << endl;
   cout << _dbg << "Protein Target ref    : " << _target_prot_file << endl;
+  cout << "\n" << " ---- ";
+  if ( gh_params.sys_job == ab_initio ) {
+    cout << "Ab_initio";
+  }
+  else {
+    cout << "Docking";
+  }
+  cout << " ---- " << endl;
   cout << endl;
 }//dump
 
 void
 Input_data::print_help () {
-  cout << "usage: ./cocos -i <infile> [-o <outfile>] [-c <int>] [-g <int>] [-a] [-r] [-v] [-d] [-h]\n" << endl;
-  cout << "Options for Cocos:\n";
-  cout << "\t" << "-h\n";
-  cout << "\t\t" << "print this help message\n";
-  cout << "\t" << "-i (string)\n";
-  cout << "\t\t" << "set input\n";
-  cout << "\t" << "-o (string) default: print on screen\n";
-  cout << "\t\t" << "set output file name\n";
-  cout << "\t" << "-c (integer) default: none\n";
-  cout << "\t\t" << "set timeout (sec.) for Montecarlo sampling\n";
-  cout << "\t" << "-g (integer) default: 10\n";
-  cout << "\t\t" << "set number of samples for Gibbs sampling\n";
-  cout << "\t" << "-a\n";
-  cout << "\t\t" << "Automagically create an input file for cocos from FASTA sequence\n";
-  cout << "\t" << "-r\n";
-  cout << "\t\t" << "set RMSD as objective function\n";
-  cout << "\t" << "-v\n";
-  cout << "\t\t" << "printf verbose info during computation\n";
+  string spaces = "        ";
+  cout << "Usage: ./cocos -i <infile> [options]\n" << endl;
+  cout << "            Options            |           Description      \n";
+  cout << "============================== | ==============================\n";
+  cout << " --rmsd                        | - Use RMSD as obj function.\n";
+  cout << " --auto_allign                 | - Automatic allignment of\n";
+  cout << "                               |   secondary structures.\n";
+  cout << " --cg_constraint               | - Set CG constraint.\n";
+  cout << " --gibbs_default               | - Use Gibbs as default for\n";
+  cout << "                               |   coordinators agents.\n";
+  cout << " --translate                   | - Translate 2nd atom of\n";
+  cout << "                               |   prediction on (0, 0, 0).\n";
+  cout << " -r|--random_moves             | - Perform random translations\n";
+  cout << "                               |   and rotations of the\n";
+  cout << "                               |   peptide when in docking\n";
+  cout << "                               |   analysis.\n";
+  cout << " -v|--verbose                  | - Printf verbose info\n";
+  cout << "                               |   during computation.\n";
+  cout << " -h|--help                     | - Print this help message.\n";
+  cout << " -i|--input      (string)      | - Read and set input.\n";
+  cout << " -o|--output     (string)      | - Set output file.\n";
+  cout << " -a|--angles     (integer)     | - Set variables' domains\n";
+  cout << "                               |   partitioning [-180, +180]\n";
+  cout << "                               |   as specified (deg).\n";
+  cout << " -s|--set_size   (integer)     | - Set size of sampling sets.\n";
+  cout << " -c|--mc_timeout (integer)     | - Set timeout for \n";
+  cout << "                               |   MonteCarlo sampling.\n";
+  cout << " -k|--docking    (integer)     | - Set minimum number of\n";
+  cout << "                               |   contacts for docking.\n";
+  cout << "                               |   Default: 4.\n";
+  cout << " -g|--gibbs      (integer)     | - Set number of Gibbs\n";
+  cout << "                               |   samples.\n";
+  cout << " -t|--gb_iterations            | - Set number of iterations\n";
+  cout << "                 (integer)     |   before swapping bins in\n";
+  cout << "                               |   Gibbs sampling.\n";
+  cout << "=============================  | =============================\n";
+  cout << "You may want to try:\n";
+  cout << "\t" << "./cocos -i proteins/1ZDD.in.cocos -v\n";
+  cout << "Other examples, input data, and structures are present in the folder \"protein\".\n";
+  cout << "For any questions, feel free to write at: campe8@nmsu.edu.\n";
 }//print_help
+
+

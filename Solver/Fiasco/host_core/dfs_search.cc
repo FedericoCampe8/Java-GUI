@@ -10,6 +10,7 @@
 #include "output.h"
 #include "statistics.h"
 #include "protein.h"
+#include "energy.h"
 
 #include <cassert>
 #include <limits>
@@ -263,6 +264,20 @@ DepthFirstSearchEngine::process_solution() {
   string dbg = "DepthFirstSearchEngine::process_leaf() - ";
   g_statistics->incr_soluions_found();
 
+  int nres  = g_target.get_nres();
+  
+  int n_threads = 32;
+  while ( n_threads < nres ) n_threads += 32;
+  n_threads = n_threads*2 + 32;
+  real energy = get_energy ( g_params.secondary_s_info,
+                             g_params.h_distances, g_params.h_angles,
+                             g_params.contact_params, g_params.aa_seq,
+                             g_params.tors, g_params.tors_corr,
+                             8, 22, 7,
+                             0, (5 * nres) - 1,
+                             nres, 0, nres-1,
+                             0, 1, n_threads );
+  
 #ifdef STATISTICS
   g_statistics->set_timer ( t_statistics );
   // Compute RMSD
@@ -274,7 +289,7 @@ DepthFirstSearchEngine::process_solution() {
   /// Store every result
   //g_output->store_results();
   /// Store just the best result
-  if ( g_statistics->rmsd_is_improved() ) g_output->store_best_results();
+  if ( g_statistics->rmsd_is_improved() ) g_output->store_best_results( -1, energy );
   if ( g_statistics->get_solutions_found() % 10000 == 0 ) {
     g_output->dump();
   }

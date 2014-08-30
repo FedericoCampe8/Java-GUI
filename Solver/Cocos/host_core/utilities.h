@@ -12,6 +12,8 @@ namespace Utilities{
   void set_all_distant_constraint ();
   void set_distance_constraint ();
   void set_centroid_constraint ();
+  void set_atom_grid_constraint ();
+  
   /***************************************
    *           Conversion tools          *
    ***************************************/
@@ -24,6 +26,7 @@ namespace Utilities{
   aminoacid cv_aa_to_class ( std::string a );
   int cv_class_to_n ( aminoacid a );
   atom_type get_atom_type( std::string name );
+  atom_type cv_string_to_atom_type( std::string name );
   
   /***************************************
    *      Offsets and Atom postions      *
@@ -35,7 +38,7 @@ namespace Utilities{
   void calculate_aa_points( bool dir, real bb[] );
   
   /***************************************
-   *        Overalp and Rotations        *
+   *   Overalp, Rotations, Translations  *
    ***************************************/
   void overlap_structures ( point& pa, point& pb, point& pc,
                            point * str_out,
@@ -47,13 +50,25 @@ namespace Utilities{
   void compute_normal_base ( point * backbone, real rot_m[3][3], real shift_v[3] );
   void change_coordinate_system ( point * backbone, real rot_m[3][3], real shift_v[3], int len=9 );
   void overlap ( point& p1, point& p2, point& p3, point * backbone, int len=9, int offset=3 );
+  void translate_structure ( real* structure, int refence, real x, real y, real z, int len );
+  
+  /***************************************
+   *      Other Protein Utilities        *
+   ***************************************/
+  void calculate_cg_atom ( aminoacid a,
+                          real* ca1, real* ca2, real* ca3,
+                          real* cg, int* radius );
+  real centroid_torsional_angle ( aminoacid a );
+  real centroid_chi2 ( aminoacid a );
+  real centroid_distance ( aminoacid a );
+  int centroid_radius ( aminoacid a );
   
   /***************************************
    *          I/O aux functions          *
    ***************************************/
-  void output_pdb_format ( std::string, const std::vector<Atom>& );
-  std::string output_pdb_format ( point* structure, int len=0, real rmsd=1000 );
-  std::string output_pdb_format ( real* structure, real rmsd=1000 );
+  void output_pdb_format ( std::string, const std::vector<Atom>&, real energy = 0 );
+  std::string output_pdb_format ( point* structure, int len=0, real rmsd=1000, real energy = 0 );
+  std::string output_pdb_format ( real* structure, real rmsd=1000, real energy = 0 );
   
   int  get_format_digits ( real );
   std::string get_format_spaces ( real );
@@ -77,15 +92,6 @@ namespace Utilities{
   void move_phi ( real * aa_points, real degree, int v_id, int ca_pos, int first_res, int threadIdx );
   void move_psi ( real * aa_points, real degree, int v_id, int ca_pos, int last_res, int threadIdx ) ;
   void copy_structure_from_to ( real* s1, real* s2, int nthreads);
-  
-  /// Other
-  void calculate_cg_atom ( aminoacid a,
-                          real* ca1, real* ca2, real* ca3,
-                          real* cg, int* radius );
-  real centroid_torsional_angle ( aminoacid a );
-  real centroid_chi2 ( aminoacid a );
-  real centroid_distance ( aminoacid a );
-  int centroid_radius ( aminoacid a );
 }//-
 
 #endif

@@ -1,0 +1,9 @@
+DOCKING
+% Proteins Information
+PEPTIDE Docking/PeptideDocking
+%KNOWN_PROT  Docking/PeptideDocking
+% Constraints
+TRANSLATE O 0 13.9 -10.6 -17.8
+ATOM_GRID docking/Dock.pdb
+DOCK_GRID docking/Dock.pdb 3
+SEED 13.9 -10.6 -17.8 20 4 

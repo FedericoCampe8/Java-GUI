@@ -7,12 +7,8 @@ void
 sang ( real* current_str, real* beam_str,
        real* all_domains, int* all_domains_idx,
        int v_id, int n_blocks, int n_threads, int smBytes ) {
-  /*
-   * @note: here all structures are valid
-   * int warp = WHICHWARP( blockIdx.x );
-   * if ( !(domain_states[ MAX_DIM * v_id + warp ] & ((uint) 1<<(blockIdx.x))) ) return;
-   */
-  /// @note: here all structures are valid
+  
+  // @note: here all structures are valid
   real local_curr_str[ n_threads * 15 ];
   
   for ( int blockIdx = 0; blockIdx < n_blocks; blockIdx++ ) {

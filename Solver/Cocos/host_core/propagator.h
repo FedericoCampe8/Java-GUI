@@ -18,6 +18,7 @@ namespace Propagator{
   void prop_c_k_rang          ( int v_id, int c_id, int c_idx );
   void prop_c_mang            ( int v_id, int c_id, int c_idx );
   void prop_c_dist            ( int v_id, int c_id, int c_idx );
+  void prop_c_atom_grid       ( int v_id, int c_id, int c_idx );
 }
 
 #endif

@@ -4,11 +4,10 @@
 #include "propagator.h"
 #include "utilities.h"
 #include "rmsd_fast.h"
+#include "potential_energy.h"
 
-/// FOR TESTING
 #include "logic_variables.h"
 #include "all_distant.h"
-//#include "cuda_rmsd.h"
 
 //#define MONTECARLO_DEBUG
 //#define MONTECARLO_DEBUG_LABELING
@@ -27,7 +26,8 @@ _iter_counter      ( 0 ),
 _max_iterations    ( 4 ),
 _n_of_restarts     ( 0 ),
 _max_n_restarts    ( 1 ),
-_temperature       ( 10.0 ),
+_n_sols            ( 0 ),
+_temperature       ( 100.0 ),
 _decreasing_factor ( 10.0 ),
 _exit_asap         ( false ),
 _changed           ( false ),
@@ -79,10 +79,18 @@ MONTECARLO::all_ground () const {
   return ( _height >= _n_vars );
 }//is_changed
 
+size_t
+MONTECARLO::get_n_sols () {
+  return _n_sols;
+}//get_n_sol
+
 void
 MONTECARLO::reset () {
-  /// Set ICM default values
   _level         = 0;
+  _n_sols        = 0;
+  _iter_counter  = 0;
+  _height        = 0;
+  _var_selection = 0;
   _n_vars        = _wrks->size();
   _wrks_it       = _wrks->begin();
   _last_wrk_sel  = -1;
@@ -92,18 +100,10 @@ MONTECARLO::reset () {
   memset ( _idx_rand_sel, true, _n_vars * sizeof(bool) );
   if ( !_labeled_vars ) {
     _labeled_vars = new bool[ _n_vars ];
-    memset ( _labeled_vars, false, _n_vars * sizeof(bool) );
   }
+  memset ( _labeled_vars, false, _n_vars * sizeof(bool) );
   /// Set Current Structure
-  memcpy(gd_params.curr_str, start_structure,gh_params.n_points * sizeof(real));
-  
-  vector<int> id_res;
-  for (;_wrks_it!=_wrks->end(); ++_wrks_it) {
-    id_res.push_back( _wrks_it->first );
-    //cout << "AGT " << _wrks_it->first << endl;
-  }
-  _wrks_it = _wrks->begin();
-  id_res.clear();
+  memcpy( gd_params.curr_str, start_structure, gh_params.n_points * sizeof(real) );
 }//reset
 
 WorkerAgent*
@@ -152,10 +152,11 @@ MONTECARLO::search () {
   
   /// Loop until no changes happen:
   /// choose the best structure to set at the end of every loop iteration
-  int n_iters = 0;
-  bool unleash_temperature = false, try_again = true;
+  int n_iters = 0, cool_down_times = 0;
+  bool unleash_temperature = false, try_again = true /*, cool_it_down = true*/;
   real diff_on_sols, param, fractpart, int_part, previous_int_par = 100000000.0;
   real prev_energy = MAX_ENERGY;
+  /// Loop trying to improve energy
   do {
     reset_iteration ();
     WorkerAgent* w;
@@ -170,7 +171,7 @@ MONTECARLO::search () {
       choose_label( w );
       /// Check timer
       if ( gh_params.timer >= 0 ) {
-        gettimeofday(&time_stats, NULL);
+        gettimeofday( &time_stats, NULL );
         total_time = time_stats.tv_sec + (time_stats.tv_usec/1000000.0) - time_start;
         /// Exit for timeout
         if ( total_time > gh_params.timer ) {
@@ -180,12 +181,14 @@ MONTECARLO::search () {
           break;
         }
       }
-    }
+    }//while
+    
     /// On timeout - break
     if ( (!try_again) && (gh_params.timer >= 0) ) break;
     /// If something is changed -> update solution
     update_solution ();
-    
+    //cout << "Number of iterations... " << ++n_iters << endl;
+#ifdef MONTECARLO_DEBUG
     if ( ((++n_iters) % 10) == 0) {
       cout << _dbg;
       if ( gh_params.follow_rmsd ) {
@@ -195,26 +198,41 @@ MONTECARLO::search () {
         printf("MonteCarlo Iteration: %d with energy %.8f\n", n_iters, _local_minimum);
       }
     }
+    if (n_iters > 1000) {
+      try_again = false;
+    }
+#endif
     
     /// If no changes and not all variables are ground force the labeling on one variable
     if ( (!_changed) && (!all_ground()) ) force_label ();
     if ( (!_exit_asap) && all_ground() && unleash_temperature ) {
+#ifdef MONTECARLO_DEBUG
+      cout << "heat it up: " << _temperature << " -> " << _temperature + _decreasing_factor << endl;
+#endif
       /// Decrease temperature (increase -> less probability to take a worst structure)
       _temperature += _decreasing_factor;
-      if ( _temperature >= 100.0 ) { _temperature = 80.0; _n_of_restarts++; }
+      if ( _temperature >= 100.0 ) { _temperature = 80.0; _n_of_restarts++; /*cout << "increase n. of restarts\n";*/ }
       /// After _max_n_restarts exit asap
       if ( _n_of_restarts > _max_n_restarts ) _temperature = 100.0;
     }
-    
     if ( !_exit_asap ) {
+      
       diff_on_sols = fabs( prev_energy - _local_minimum );
       /// Round up values
       param = diff_on_sols * 1000;
       fractpart = modf ( param , &int_part );
       /// Check if some changes happened
       if ( (int_part == previous_int_par) || (int_part == 0) ) {
-        if ( ((++_iter_counter) > _max_iterations) && all_ground() ) try_again = false;
+        if ( ((++_iter_counter) > _max_iterations) && all_ground() ) { try_again = false; /* cout << "exit asap\n"; */ }
         /// Start to decrease temperature
+        if ( _temperature >= 100.0  /*&& cool_it_down*/ ) {
+          _temperature = 80.0 + ((100.0/_max_iterations) * ((cool_down_times++) - 1));
+          //_temperature = 30.0; cool_it_down = false;
+
+        }
+#ifdef MONTECARLO_DEBUG
+        cout << _iter_counter << " prev==current -> unleash " << _iter_counter << " t: " << _temperature << endl;
+#endif
         unleash_temperature = true;
       }
       else {
@@ -223,25 +241,28 @@ MONTECARLO::search () {
       /// Set values for next round
       prev_energy      = _local_minimum;
       previous_int_par = int_part;
+      
     }
     else {
-      /// Exit as soon as.
+      /// Exit as soon as possible
       /// _changed: false (no changes) /\ (!all_ground()) = false (all_ground() = true)
       try_again = ( _changed || (!all_ground()) );
     }
-    
   } while ( try_again );
-  
+
   /// Take the best structure among all possible samplings
-  if (  _glb_current_minimum < _local_minimum ) {
-    cout << _dbg << "Solution with value: " <<
-    _glb_current_minimum << " instead of " <<
-    _local_minimum << endl;
+  if ( _glb_current_minimum < _local_minimum ) {
+    if ( gh_params.verbose ) {
+      cout << _dbg << "Solution with value: " <<
+      _glb_current_minimum << " instead of " <<
+      _local_minimum << endl;
+    }
+    
     _local_minimum = _glb_current_minimum;
     memcpy ( gd_params.curr_str, _glb_best_str,
              gh_params.n_points * sizeof( real ) );
   }
-  
+
 #ifdef MONTECARLO_DEBUG
   cout << _dbg << "End search\n";
 #endif
@@ -249,7 +270,9 @@ MONTECARLO::search () {
 
 void
 MONTECARLO::force_label () {
+#ifdef MONTECARLO_DEBUG
   cout << "FORCE LABELING" << endl;
+#endif
   WorkerAgent* w;
   /// Find the first not labeled var
   int select = -1;
@@ -295,7 +318,8 @@ MONTECARLO::force_label () {
 
 int
 MONTECARLO::choose_label ( WorkerAgent* w ) {
-  int best_label = 0, n_threads = 32;
+  int best_label = 0;
+  int n_threads = 32;
   int v_id       = w->get_variable()->get_id();
   int n_blocks   = gh_params.set_size;
   int smBytes    = ( gh_params.n_points + 2 * gh_params.n_res ) * sizeof(real);
@@ -304,37 +328,23 @@ MONTECARLO::choose_label ( WorkerAgent* w ) {
   n_threads = n_threads*2 + 32;
   
 #ifdef MONTECARLO_DEBUG
-  cout << _dbg << "# AA " << _mas_scope_size <<
+  cout << _dbg << "num. of AA " << _mas_scope_size <<
   " V_id " << v_id << " nres " << gh_params.n_res <<
   " bb start " << _mas_bb_start <<
   " bb end "   << _mas_bb_end <<
-  " # of blocks " << n_blocks << 
-  " # of threads " << n_threads << endl;
+  " num. of blocks " << n_blocks <<
+  " num. of threads " << n_threads << endl;
   getchar();
 #endif
+
   
-  if (gh_params.follow_rmsd) {
-    int num_of_res = _mas_scope_second - _mas_scope_first + 1;
-    Rmsd_fast::get_rmsd( gd_params.beam_str, gd_params.beam_energies,
-                         gd_params.validity_solutions, gd_params.known_prot,
-                         num_of_res, _mas_scope_first, _mas_scope_second,
-                         n_blocks );
-  }
-  else {
-    get_energy( gd_params.beam_str, gd_params.beam_energies,
-                gd_params.validity_solutions,
-                gd_params.secondary_s_info,
-                gd_params.h_distances, gd_params.h_angles,
-                gd_params.contact_params, gd_params.aa_seq,
-                gd_params.tors, gd_params.tors_corr,
-                _energy_weights[ f_hydrogen ],
-                _energy_weights[ f_contact ],
-                _energy_weights[ f_correlation ],
-                _mas_bb_start, _mas_bb_end,
-                gh_params.n_res, _mas_scope_first, _mas_scope_second,
-                smBytes, n_blocks, n_threads );
-  }
-  
+
+  _energy_function->calculate_energy ( gd_params.beam_str, gd_params.beam_energies,
+                                       gd_params.validity_solutions, gh_params.n_res,
+                                       _mas_bb_start, _mas_bb_end,
+                                       _mas_scope_first, _mas_scope_second,
+                                       smBytes, n_blocks, n_threads );
+
   /// Copy Energy Values
   memcpy ( gh_params.beam_energies, gd_params.beam_energies, n_blocks * sizeof( real ) );
   /// Choose best label
@@ -344,9 +354,12 @@ MONTECARLO::choose_label ( WorkerAgent* w ) {
     if( Math::truncate_number( gh_params.beam_energies[ i ] ) < truncated_number ) {
       best_label = i;
       truncated_number = gh_params.beam_energies[ best_label ];
+      if ( gh_params.sys_job == ab_initio ) { _n_sols++; }
     }
   }
-  if ( gh_params.beam_energies[ best_label ] < _local_current_minimum ) {
+
+
+  if ( (gh_params.beam_energies[ best_label ] < _local_current_minimum) ) {
     /// At least one improving structure
     _changed               = true;
     _best_agent            = _last_idx_sel;
@@ -365,7 +378,7 @@ MONTECARLO::choose_label ( WorkerAgent* w ) {
     }
   }
   
-  /// Try with worst choices if not exit asap and everything is ground
+  /// Try worst choices if not exit asap and everything is ground
   if ( (!_changed) && (!_exit_asap) && all_ground() ) {
     /// We consider a valid structure with energy different from _local_current_minimum
     if ( (gh_params.beam_energies[ best_label ] < MAX_ENERGY) &&
@@ -394,14 +407,23 @@ MONTECARLO::choose_label ( WorkerAgent* w ) {
 }//choose_label
 
 void
-MONTECARLO::assign_with_prob ( int label, WorkerAgent* w ) {
-  real rnd_num  = ( rand () % 101 ) / 100.0;
+MONTECARLO::assign_with_prob ( int label, WorkerAgent* w, real extern_prob ) {
+  real rnd_num = extern_prob;
+  if ( rnd_num == 0 ) {
+    rnd_num = ( rand () % 101 ) / 100.0;
+  }
+  
+  if ( gh_params.beam_energies[ label ] < _glb_current_minimum ) {
+    rnd_num = 1.0;
+  }
+  
   /// If random is > temperature accept a worst structure
-  /*
+#ifdef MONTECARLO_DEBUG
   cout << _dbg << "rnd_num " << rnd_num << " temp " << (_temperature / 100.0) <<
   " _local_current_minimum " << _local_current_minimum << " new " <<
   gh_params.beam_energies[ label ] << endl;
-  */
+#endif
+  
   if ( rnd_num > (_temperature / 100.0) ) {
     _changed               = true;
     _best_agent            = _last_idx_sel;

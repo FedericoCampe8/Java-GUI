@@ -13,11 +13,11 @@ using namespace Math;
 void
 centroid ( real* beam_str, real* validity_solutions, aminoacid * aa_seq, int v_id, int n_blocks, int n_threads, int n_bytes ) {
   for ( int blockIdx = 0; blockIdx < n_blocks; blockIdx++ ) {
-    if ( !validity_solutions[ blockIdx ] ) continue;
+    if ( validity_solutions[ blockIdx ] >= MAX_ENERGY  ) continue;
     int check_success = 1;
     check_centroid ( &beam_str[ blockIdx * n_threads * 15 ], &check_success, n_threads, aa_seq );
     if ( !check_success ) {
-      validity_solutions[ blockIdx ] = 0;
+      validity_solutions[ blockIdx ] += MAX_ENERGY;
     }
   }
   

@@ -23,7 +23,7 @@ public:
   bool is_type ( atom_type t ) const;
   void set_type ( atom_type t );
   void set_radius ( atom_type t );
-  void set_position( real* p);
+  void set_position( real* p );
   void set_position( real x, real y, real z );
     
   void dump ();

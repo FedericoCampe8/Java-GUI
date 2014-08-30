@@ -25,11 +25,14 @@ Utilities::set_search_labeling_strategies () {
       if ( gh_params.mas_des[ i ].search_strategy == montecarlo ) {
         
         for ( int j = 0; j < gh_params.mas_des[ i ].vars_list.size(); j++ ) {
-          /// Skip tails
-          if ( (gh_params.mas_des[ i ].vars_list[ j ] == 0) ||
-              (gh_params.mas_des[ i ].vars_list[ j ] == (gh_params.n_res-1)) ) {
-            continue;
+          /// Skip tails for ab-initio prediction
+          if ( gh_params.sys_job == ab_initio ) {
+            if ( (gh_params.mas_des[ i ].vars_list[ j ] == 0) ||
+               (gh_params.mas_des[ i ].vars_list[ j ] == (gh_params.n_res-1)) ) {
+                continue;
+            }
           }
+          
           shuffle.push_back ( gh_params.mas_des[ i ].vars_list[ j ] );
         }
         for ( int j = 0; j < gh_params.mas_des[ i ].vars_list.size(); j++ ) {
@@ -158,6 +161,22 @@ Utilities::set_centroid_constraint () {
   }
   cout << "CG constraint set... \n";
 }//set_centroid_constraint
+
+void
+Utilities::set_atom_grid_constraint () {
+  /// Set all distant constraint
+  vector<int> coeff ( gh_params.n_res + 2, 0 );
+  for ( int i = 0; i < gh_params.mas_des.size(); i++ ) {
+    coeff[ gh_params.n_res + 1 ] = structure;
+    if ( gh_params.mas_des[ i ].agt_type == coordinator ) {
+      coeff[ gh_params.n_res ]     = 1;
+      coeff[ gh_params.n_res + 1 ] = coordinator;
+    }
+    g_constraints.push_back ( new Constraint ( c_atom_grid, gh_params.mas_des[ i ].vars_list, coeff, 1 ) );
+    coeff.assign( gh_params.n_res + 2, 0 );
+  }//i
+  cout << "Atom_Grid constraint set... \n";
+}//set_atom_grid_constraint
 
 /***************************************
  *           Conversion tools          *
@@ -356,14 +375,30 @@ Utilities::get_atom_type (string name) {
   else if (name.find(" H  ") != string::npos ||
            name.find(" H  A") != string::npos)
     return H;
-  else if (name.find(" H1 ") != string::npos ||
-           name.find(" H1 A") != string::npos)
+  else if (name.find(" H1 ")  != string::npos ||
+           name.find(" H1 A") != string::npos ||
+           name.find(" HA ")  != string::npos )
     return H;
   else if (name.find(" S  ") != string::npos ||
            name.find(" S  A") != string::npos)
     return S;
   else return X;
 }//get_atom_type
+
+atom_type
+Utilities::cv_string_to_atom_type( string name ) {
+  if ( name.find("N") != string::npos )
+    return N;
+  else if ( name.find("CA") != string::npos )
+    return CA;
+  else if ( name.find("C") != string::npos )
+    return CB;
+  else if ( name.find("O") != string::npos )
+    return O;
+  else if ( name.find("H") != string::npos )
+    return H;
+  else return X;
+}//cv_cv_string_to_str_type
 
 /***************************************
  *      Offsets and Atom postions      *
@@ -696,14 +731,27 @@ Utilities::overlap ( point& p1, point& p2, point& p3,
   }
 }//overlap
 
+void
+Utilities::translate_structure ( real* structure, int reference, real x, real y, real z, int length ) {
+  x -= structure[ reference*3 + 0 ];
+  y -= structure[ reference*3 + 1 ];
+  z -= structure[ reference*3 + 2 ];
+  for (int i = 0; i < length; i++) {
+    structure[ i*3 + 0 ] += x;
+    structure[ i*3 + 1 ] += y;
+    structure[ i*3 + 2 ] += z;
+  }//i
+}//translate_structure
+
+
 /***************************************
  *          I/O aux functions          *
  ***************************************/
 void 
-Utilities::output_pdb_format ( string outf, const vector< Atom >& vec ) {
+Utilities::output_pdb_format ( string outf, const vector< Atom >& vec, real energy ) {
     FILE *fid;
     char fx[4], fy[4], fz[4];
-    int k = 0;
+    int k = -1;
     real x,y,z;
     /* Open an output file */
     fid = fopen ( outf.c_str(), "a" );
@@ -712,7 +760,11 @@ Utilities::output_pdb_format ( string outf, const vector< Atom >& vec ) {
         return;
     }    
     int atom=1;
+    if ( energy == 0 ) energy = gh_params.minimum_energy;
+  
     fprintf(fid, "MODEL    001\n");
+    fprintf(fid, "REMARK \t ENERGY %f\n", energy );
+    //fprintf(fid, "MODEL    001\n");
     
     /* Write the solution into the output file */;
     for (uint i = 0; i < vec.size(); i++) {
@@ -758,13 +810,21 @@ Utilities::output_pdb_format ( string outf, const vector< Atom >& vec ) {
 }//output_pdb_format
 
 string
-Utilities::output_pdb_format( point* structure, int len, real rmsd ){
+Utilities::output_pdb_format( point* structure, int len, real rmsd, real energy ){
   stringstream s;
   real x, y, z;
   int aa_idx = -1;
   int atom_s = 0, atom_e = len;
-  if ( rmsd >= 0 ) s << "REMARK \t RMSD: " << rmsd << endl;
+  int atom_counter = 0;
+  if ( energy == 0 ) energy = gh_params.minimum_energy;
+  
+  //s << "REMARK \t ENERGY: " << energy << endl;
+  //if ( rmsd > 0 ) s << "REMARK \t RMSD: " << rmsd << endl;
+  s << "MODEL " << gh_params.num_models++ << endl;
+  s << "REMARK \t ENERGY: " << energy << endl;
   for (int i = atom_s; i < atom_e; i++) {
+    atom_counter++;
+    
     x = structure[i][0];
     y = structure[i][1];
     z = structure[i][2];
@@ -797,10 +857,7 @@ Utilities::output_pdb_format( point* structure, int len, real rmsd ){
     << setw(3) << get_aaidx_from_bbidx(i, atom_type(i%5))
     << "    "
     << fixed;
-    //<< get_format_spaces(x) << setprecision(3) << x
-    //<< get_format_spaces(y) << setprecision(3) << y
-    //<< get_format_spaces(z) << setprecision(3) << z
-    //<< "  1.00  1.00\n";
+
     if (fabs(x) >= 100) {
       if (fabs(y) >= 100) {
         if (fabs(z) >= 100) {
@@ -870,19 +927,49 @@ Utilities::output_pdb_format( point* structure, int len, real rmsd ){
       }
     }
   }
+  
+  atom_counter++;
+  
+  int  CG_radius;
+  real my_CG[ 3 ];
+  for ( int i = 0; i < ((len/5) - 2); i++ ) {
+    calculate_cg_atom( cv_aa_to_class ( gh_params.target_protein->get_sequence()[ i+1 ] ),
+                       structure[ i*5 + 1    ],
+                       structure[ (i+1)*5 +1 ],
+                       structure[ (i+2)*5 +1 ],
+                       my_CG, &CG_radius );
+    x = my_CG[ 0 ];
+    y = my_CG[ 1 ];
+    z = my_CG[ 2 ];
+    
+    s<<"ATOM   "
+    <<setw(4)<<atom_counter++
+    <<"  CG  "
+    <<cv_aa1_to_aa3( gh_params.target_protein->get_sequence()[ i+1 ] )
+    <<" A "<<setw(3)<<i+2<<"    "
+    <<fixed
+    <<get_format_spaces(x)<<setprecision(3)<<x
+    <<get_format_spaces(y)<<setprecision(3)<<y
+    <<get_format_spaces(z)<<setprecision(3)<<z
+    <<"  1.00  1.00\n";
+  }//i
+  
   s << "ENDMDL\n";
   return s.str();
 }//print_results
 
 string
-Utilities::output_pdb_format( real* structure, real rmsd ){
+Utilities::output_pdb_format( real* structure, real rmsd, real energy ){
   stringstream s;
   real x, y, z;
   int len = (gh_params.n_res) * 5;
   int aa_idx = -1;
   int atom_s = 0, atom_e = len;
+  if ( energy == 0 ) energy = gh_params.minimum_energy;
+  
   s << "MODEL 0\n";
-  if ( rmsd >= 0 ) s << "REMARK \t RMSD: " << rmsd << endl;
+  s << "REMARK \t ENERGY: " << energy << endl;
+  //if ( rmsd > 0 ) s << "REMARK \t RMSD: " << rmsd << endl;
   for (int i = atom_s; i < atom_e; i++) {
     x = structure[ 3*i + 0 ];
     y = structure[ 3*i + 1 ];
@@ -916,10 +1003,6 @@ Utilities::output_pdb_format( real* structure, real rmsd ){
     << setw(3) << get_aaidx_from_bbidx(i, atom_type(i%5))
     << "    "
     << fixed;
-    //<< get_format_spaces(x) << setprecision(3) << x
-    //<< get_format_spaces(y) << setprecision(3) << y
-    //<< get_format_spaces(z) << setprecision(3) << z
-    //<< "  1.00  1.00\n";
     if (fabs(x) >= 100) {
       if (fabs(y) >= 100) {
         if (fabs(z) >= 100) {

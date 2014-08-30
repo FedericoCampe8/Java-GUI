@@ -53,30 +53,31 @@ int get_format_digits(real x) {
 }
  
 void 
-Output::store_results() {
-  store_results( 0, g_logicvars->var_point_list.size() - 1 );
+Output::store_results( real energy ) {
+  store_results( 0, g_logicvars->var_point_list.size() - 1, energy );
 }//store_results
 
 void 
-Output::store_results( real rmsd ) {
-  store_results( 0, g_logicvars->var_point_list.size()-1, rmsd) ;
+Output::store_results( real rmsd, real energy ) {
+  store_results( 0, g_logicvars->var_point_list.size()-1, rmsd, energy ) ;
 }//store_results
 
 void
-Output::store_best_results() {
-  store_results( 0, g_logicvars->var_point_list.size() - 1, -1, true );
+Output::store_best_results( real energy ) {
+  store_results( 0, g_logicvars->var_point_list.size() - 1, energy, -1, true );
 }//store_best_results
 
 void
-Output::store_best_results( real rmsd ) {
-  store_results( 0, g_logicvars->var_point_list.size()-1, rmsd, true ) ;
+Output::store_best_results( real rmsd, real energy ) {
+  store_results( 0, g_logicvars->var_point_list.size()-1, energy, rmsd, true ) ;
 }//store_best_results
 
 void 
-Output::store_results ( uint atom_s, uint atom_e, real rmsd, bool best_result ){
+Output::store_results ( uint atom_s, uint atom_e, real energy, real rmsd, bool best_result ){
   stringstream s;
   real x,y,z;
   int aa_idx=-1;
+  s << "REMARK \t ENERGY: " << energy << endl;
   if (rmsd >= 0)
     s << "REMARK \t RMSD: " << rmsd << endl;
   for (uint i = atom_s; i <= atom_e; i++) {

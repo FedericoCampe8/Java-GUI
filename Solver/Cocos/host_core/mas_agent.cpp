@@ -59,6 +59,17 @@ _search_strategy ( des.search_strategy ) {
     _scope.second = des.scope.second;
   else
     _scope.second = prot_len-1;
+  /*
+  /// Update min-max atoms refs considering the scope set by the user
+  min_aa = min( min_aa, _scope.first );
+  /// Handle case where the min aa is 0 and the coordinator is not the default one
+  /// (necessary for merging structures)
+  if ( (*std::min_element( _vars_list.begin(), _vars_list.end() )) > 0 ) { min_aa = max( min_aa, 1 ); }
+  
+  max_aa = max( max_aa, _scope.second );
+  _atoms_bds.first  = Utilities::get_bbidx_from_aaidx ( min_aa, N );
+  _atoms_bds.second = Utilities::get_bbidx_from_aaidx ( max_aa, H );
+   */
 }//-
 
 MasAgent::~MasAgent() {
@@ -294,17 +305,17 @@ MasAgent::dump_general_info () {
 void
 MasAgent::search_alloc ( int max_beam_size ) {
   Utilities::print_debug ( _dbg, "Search alloc" );
-  gd_params.all_domains = (real*) malloc ( (_n_res + (2 * _sum_dom_size)) * sizeof(real) );
-  gd_params.all_domains_idx = (int*) malloc ( _n_res * sizeof(int) );
-  gd_params.curr_str = (real*) malloc ( _n_points * sizeof(real) );
-  gd_params.beam_str = (real*) malloc (   gh_params.set_size * _n_points * sizeof(real)  );
+  gd_params.all_domains     = (real*) calloc ( (_n_res + (2 * _sum_dom_size)), sizeof(real) );
+  gd_params.all_domains_idx = (int*) calloc ( _n_res,  sizeof(int) );
+  gd_params.curr_str = (real*) calloc ( _n_points, sizeof(real) );
+  gd_params.beam_str = (real*) calloc (   gh_params.set_size * _n_points, sizeof(real)  );
   gd_params.beam_energies = (real*) malloc( gh_params.set_size * sizeof(real) );
 }//search_alloc
 
 void
 MasAgent::search_init () {
   Utilities::print_debug ( _dbg, "Search init" );
-  real* all_doms       = (real*) malloc ( (_n_res + (2 * _sum_dom_size)) * sizeof (real) );
+  real* all_doms       = (real*) calloc ( (_n_res + (2 * _sum_dom_size)), sizeof (real) );
   int* all_domains_idx = (int*)  calloc ( _n_res, sizeof (int) );
   
   WorkerAgent* curr_wrk;

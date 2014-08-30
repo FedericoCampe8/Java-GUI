@@ -43,6 +43,7 @@ public:
   void not_labeled ();
   
   void search ();
+  void icm_search ();
   int choose_label ( WorkerAgent* w );
   void update_solution ( int w_id, int label );
   

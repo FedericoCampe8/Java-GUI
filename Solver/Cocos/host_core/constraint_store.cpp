@@ -16,7 +16,8 @@ func[ c_type_size ] = {
   prop_c_k_rang,
   prop_c_cg,
   prop_c_mang,
-  prop_c_dist
+  prop_c_dist,
+  prop_c_atom_grid
 };
 
 ConstraintStore::ConstraintStore() :
