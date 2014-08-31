@@ -1,5 +1,4 @@
 AB_INITIO 
-TARGET_PROT /home/matteo/NetBeansProjects/jafatt/Solver/proteins/1ZDD
-KNOWN_PROT  /home/matteo/NetBeansProjects/jafatt/Solver/proteins/1ZDD
+TARGET_PROT /home/matteo/Desktop/Java-GUI/Solver/proteins/1ZDD
+KNOWN_PROT  /home/matteo/Desktop/Java-GUI/Solver/proteins/1ZDD
 H 2 13 
-H 19 32 

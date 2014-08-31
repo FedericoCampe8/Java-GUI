@@ -1,0 +1,8 @@
+% Database information
+FRAGMENTDB  DB/loopdb.dat
+% Proteins Information
+TARGET_PROT ../proteins/1AIL.cocos
+KNOWN_PROT  ../proteins/1AIL.cocos
+CONSTRAINTS ../sys/1AIL.in.con
+FRAG_SEC_FL ../sys/1AIL.in.pdb
+SEQ OOOOOOOOOSOHHHHHHHHHHHHHOOOOOOOHHHHHHHHHHHOOOOOOOOOHHHHHHHHOOOSOOOOOOOOOO

@@ -1,8 +1,8 @@
 % Database information
 FRAGMENTDB  DB/loopdb.dat
 % Proteins Information
-TARGET_PROT ../proteins/1ZDD.model
-KNOWN_PROT  ../proteins/1ZDD.model
+TARGET_PROT ../proteins/1ZDD.cocos
+KNOWN_PROT  ../proteins/1ZDD.cocos
 CONSTRAINTS ../sys/1ZDD.in.con
 FRAG_SEC_FL ../sys/1ZDD.in.pdb
 SEQ OOOHHHHHHHHOOOOOOOHHHHHHHHHHOOOOOO
