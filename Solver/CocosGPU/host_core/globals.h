@@ -62,8 +62,6 @@ typedef struct {
 typedef struct {
   /// Input options
   bool follow_rmsd;
-  bool translate_str;
-  bool translate_str_fnl;
   bool centroid;
   bool gibbs_as_default;
   bool verbose;
@@ -74,7 +72,6 @@ typedef struct {
   int  n_gibbs_samples;
   int  n_gibbs_iters_before_swap;
   int  timer;
-  double translation_point[4];
   std::string output_file;
   /// Variables and domains
   int n_res;

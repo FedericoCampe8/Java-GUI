@@ -289,6 +289,7 @@ Input_data::create_input_file () {
   ifstream inputFile;
   string line_fasta, buffer, line_allign, allign_input = "alignment.txt";
   char * fname = (char*) malloc ( (allign_input.size() + 1) * sizeof(char) );
+  bool first_line = false;
   strcpy( fname, allign_input.c_str() );
   inputFile.open( fname );
   if( inputFile.is_open() ){
@@ -316,7 +317,10 @@ Input_data::create_input_file () {
       getline ( inputFile, buffer );
       if (buffer.length() != 0){
         if (buffer.compare( 0, 1, ">" ) != 0 ){
-          line_fasta = buffer;
+          first_line = true;
+          line_fasta += buffer;
+        }
+        if ((buffer.compare( 0, 1, ">" ) == 0 ) && (first_line)){
           break;
         }
       }

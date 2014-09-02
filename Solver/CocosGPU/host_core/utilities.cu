@@ -364,20 +364,6 @@ Utilities::get_atom_type (string name) {
   else return X;
 }//get_atom_type
 
-atom_type
-Utilities::cv_string_to_atom_type( string name ) {
-  if ( name.find("N") != string::npos )
-    return N;
-  else if ( name.find("CA") != string::npos )
-    return CA;
-  else if ( name.find("C") != string::npos )
-    return CB;
-  else if ( name.find("O") != string::npos )
-    return O;
-  else if ( name.find("H") != string::npos )
-    return H;
-  else return X;
-}//cv_cv_string_to_str_type
 /***************************************
  *      Offsets and Atom postions      *
  ***************************************/
@@ -713,7 +699,7 @@ Utilities::overlap ( point& p1, point& p2, point& p3,
  *          I/O aux functions          *
  ***************************************/
 void 
-Utilities::output_pdb_format ( string outf, const vector< Atom >& vec, real energy ) {
+Utilities::output_pdb_format ( string outf, const vector< Atom >& vec ) {
     FILE *fid;
     char fx[4], fy[4], fz[4];
     int k = 0;
@@ -725,9 +711,6 @@ Utilities::output_pdb_format ( string outf, const vector< Atom >& vec, real ener
         return;
     }    
     int atom=1;
-    if ( energy == 0 ) energy = gh_params.minimum_energy;
-  
-    fprintf(fid, "REMARK \t ENERGY %f\n", energy );
     fprintf(fid, "MODEL    001\n");
     
     /* Write the solution into the output file */;
@@ -774,14 +757,11 @@ Utilities::output_pdb_format ( string outf, const vector< Atom >& vec, real ener
 }//output_pdb_format
 
 string
-Utilities::output_pdb_format( point* structure, int len, real rmsd, real energy ){
+Utilities::output_pdb_format( point* structure, int len, real rmsd ){
   stringstream s;
   real x, y, z;
   int aa_idx = -1;
   int atom_s = 0, atom_e = len;
-  if ( energy == 0 ) energy = gh_params.minimum_energy;
-  
-  s << "REMARK \t ENERGY: " << energy << endl;
   if ( rmsd >= 0 ) s << "REMARK \t RMSD: " << rmsd << endl;
   for (int i = atom_s; i < atom_e; i++) {
     x = structure[i][0];
@@ -894,16 +874,13 @@ Utilities::output_pdb_format( point* structure, int len, real rmsd, real energy 
 }//print_results
 
 string
-Utilities::output_pdb_format( real* structure, real rmsd, real energy ){
+Utilities::output_pdb_format( real* structure, real rmsd ){
   stringstream s;
   real x, y, z;
   int len = (gh_params.n_res - 1) * 5;
   int aa_idx = -1;
   int atom_s = 0, atom_e = len;
-  if ( energy == 0 ) energy = gh_params.minimum_energy;
-  
   s << "MODEL 0\n";
-  s << "REMARK \t ENERGY: " << energy << endl;
   if ( rmsd >= 0 ) s << "REMARK \t RMSD: " << rmsd << endl;
   for (int i = atom_s; i < atom_e; i++) {
     x = structure[ 3*i + 0 ];

@@ -26,8 +26,6 @@ _target_sequence ( "" ) {
   gh_params.verbose                   = false;
   gh_params.centroid                  = false;
   gh_params.h_def_on_pdb              = true;
-  gh_params.translate_str             = false;
-  gh_params.translate_str_fnl         = false;
   gh_params.n_gibbs_samples           = -1;
   gh_params.n_coordinators            = 1;
   gh_params.set_size                  = MAX_GIBBS_SET_SIZE;
@@ -39,7 +37,7 @@ _target_sequence ( "" ) {
   // Process input
   int c;
   bool auto_allign = false;
-  while ( (c = getopt(argc, argv, "i:o:c:g:t:sarhelvdq")) != -1 ) {
+  while ( (c = getopt(argc, argv, "i:o:c:g:t:sarhevdq")) != -1 ) {
     switch ( c ) {
       case 'i':
         /// Input file name
@@ -87,10 +85,6 @@ _target_sequence ( "" ) {
       case 'v':
         /// Verbose
         gh_params.verbose = true;
-        break;
-      case 'l':
-        /// Translate final structure with CA (0 aa) to 0 0 0
-        gh_params.translate_str_fnl = true;
         break;
       case 'h':
         /// Print help
@@ -171,21 +165,8 @@ Input_data::create_input_file () {
   
   pid_t pid=fork();
   if (pid==0) { /// child process
-    string prg_name = "jnet";
-    string prg_opts = "-s";
-    
-    char *prg_name_nc = new char[ prg_name.length() + 1 ];
-    strcpy ( prg_name_nc, prg_name.c_str() );
-    
-    char *prg_opts_nc = new char[ prg_opts.length() + 1 ];
-    strcpy ( prg_opts_nc, prg_opts.c_str() );
-    
-    static char *argv[] = { prg_name_nc, prg_opts_nc, cstr, NULL };
-    execv( "./bin_jnet/jnet",argv );
-    
-    delete [] prg_name_nc;
-    delete [] prg_opts_nc;
-    
+    static char *argv[]={"jnet","-p", cstr, NULL};
+    execv("./bin_jnet/jnet",argv);
     exit(127); /// only if execv fails
   }
   else { /// pid!=0; parent process
@@ -195,10 +176,16 @@ Input_data::create_input_file () {
   ifstream inputFile;
   string line_fasta, line_allign, allign_input = "alignment.txt";
   char * fname = (char*) malloc ( (allign_input.size() + 1) * sizeof(char) );
+  bool first_line = false;
   strcpy( fname, allign_input.c_str() );
   inputFile.open( fname );
   if( inputFile.is_open() ){
     getline ( inputFile, line_allign );
+    /*
+     while ( inputFile.good() ){
+     getline ( inputFile, line_allign );
+     }
+     */
   }
   else {
     cout << _dbg << "unable to open " << allign_input << " " << endl;
@@ -208,13 +195,32 @@ Input_data::create_input_file () {
   free( fname );
   inputFile.close ();
   
-  
+  /* Old version - looks like ain't work with the rcsb.org files
   char * fname2 = (char*) malloc ( (_in_file.size() + 1) * sizeof(char) );
   strcpy( fname2, _in_file.c_str() );
   inputFile.open( fname2 );
   if( inputFile.is_open() ){
     while ( inputFile.good() ){
       getline ( inputFile, line_fasta );
+    }
+  }
+  */
+
+  char * fname2 = (char*) malloc ( (_in_file.size() + 1) * sizeof(char) );
+  strcpy( fname2, _in_file.c_str() );
+  inputFile.open( fname2 );
+  if( inputFile.is_open() ){
+    while ( inputFile.good() ){
+      getline ( inputFile, buffer );
+      if (buffer.length() != 0){
+        if (buffer.compare( 0, 1, ">" ) != 0 ){
+          first_line = true;
+          line_fasta += buffer;
+        }
+        if ((buffer.compare( 0, 1, ">" ) == 0 ) && (first_line)){
+          break;
+        }
+      }
     }
   }
   else {
@@ -358,39 +364,6 @@ Input_data::read_file () {
       else if (line.compare( 0, 6, "ANGLES" ) == 0 ) {
         _angles_file = line.substr(start, line.size() - start);
         energy_parameters_read++;
-      }
-      /// Some Constraints
-      else if (line.compare( 0, 9, "TRANSLATE" ) == 0 ) {
-        gh_params.translate_str = true;
-        
-        size_t found = (line.substr( 9, line.size() )).find_first_not_of(" ");
-        found += 9;
-        if ( line[ found+1 ] == ' ') {
-          /// N, H, C, O
-          gh_params.translation_point[ 0 ] = Utilities::cv_string_to_atom_type( line.substr( found, 2 ) );
-          found += 2;
-        }
-        else {
-          /// CA
-          gh_params.translation_point[ 0 ] = Utilities::cv_string_to_atom_type( line.substr( found, 3 ) );
-          found += 3;
-        }
-        
-        std::stringstream stream( line.substr( found, line.size() ) );
-        
-        double n;
-        int parsed_val = 0;
-        while( 1 ) {
-          stream >> n;
-          if( !stream ) break;
-          if ( !parsed_val ) {
-            gh_params.translation_point[ 0 ] += n*5;
-          }
-          else {
-            gh_params.translation_point[ parsed_val ] = n;
-          }
-          parsed_val++;
-        }
       }
       /// Secondary Structure Descriptions, Agents, and Priorities
       else if ( line.compare( 0, 2, "H " ) == 0 ||
@@ -1261,14 +1234,8 @@ Input_data::print_help () {
   cout << "\t\t" << "set RMSD as objective function\n";
   cout << "\t" << "-q\n";
   cout << "\t\t" << "set Gibbs sampling algorithm on all Coordinator agents (default: MonteCarlo)\n";
-  cout << "\t" << "-l\n";
-  cout << "\t\t" << "Translate the final structure with the first CA atom set on (0, 0, 0)\n";
   cout << "\t" << "-v\n";
   cout << "\t\t" << "printf verbose info during computation\n";
   cout << "\t" << "-d\n";
   cout << "\t\t" << "printf device info\n";
-  cout << "You may want to try:\n";
-  cout << "\t" << "./cocos -i proteins/1ZDD.in.cocos -v\n";
-  cout << "Other examples, input data, and structures are present in the folder \"protein\".\n";
-  cout << "For any question, feel free to write at: campe8@nmsu.edu\n";
 }//print_help

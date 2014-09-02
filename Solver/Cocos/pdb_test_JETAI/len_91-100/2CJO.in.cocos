@@ -1,0 +1,19 @@
+% Proteins Information
+TARGET_PROT pdb_test_JETAI/len_91-100/2CJO
+KNOWN_PROT  pdb_test_JETAI/len_91-100/2CJO
+% Structure Agents definition
+% Types: 
+% H - alpha helix
+% T - beta turn
+% E - beta strand
+% P - polyproline II
+% C - coil
+S 2 7
+S 15 18
+H 24 31
+S 51 56
+H 66 71
+H 76 78
+S 81 88
+
+

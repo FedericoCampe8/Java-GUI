@@ -1,0 +1,1 @@
+./cocos -i /home/matteo/NetBeansProjects/jafatt/Solver/proteins/1zdd.fasta -o /home/matteo/NetBeansProjects/jafatt/Solver/proteins/1ZDD.cocos.pdb -a -c 60 -v
