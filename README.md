@@ -1,5 +1,17 @@
 Java-GUI
-========
+========================================
+
+The tool is based on the FIASCO (1) and COCOS (2) solvers. Please cite:
+
+1. Federico Campeotto, Alessandro Dal Palù, Agostino Dovier, Ferdinando Fioretto, Enrico Pontelli.
+A Constraint Solver for Flexible Protein Model. J. Artif. Intell. Res. (JAIR) 48: 953-1000 (2013)
+
+2. Federico Campeotto, Agostino Dovier, Enrico Pontelli: Protein Structure Prediction on GPU.
+A Declarative Approach in a Multi-agent Framework. ICPP 2013: 474-479
+
+For further information please visit http://cs.nmsu.edu/FIASCO
+
+========================================
 
 GUI Interface for Protein Analysis 
 This is the GUI interface to coordinate both CoCoS and FIASCO.
