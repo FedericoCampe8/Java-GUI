@@ -9,7 +9,7 @@ A Constraint Solver for Flexible Protein Model. J. Artif. Intell. Res. (JAIR) 48
 2. Federico Campeotto, Agostino Dovier, Enrico Pontelli: Protein Structure Prediction on GPU.
 A Declarative Approach in a Multi-agent Framework. ICPP 2013: 474-479
 
-For further information please visit http://cs.nmsu.edu/FIASCO
+For further information please visit http://www.cs.nmsu.edu/fiasco/
 
 ========================================
 
