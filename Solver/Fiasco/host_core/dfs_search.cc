@@ -282,14 +282,15 @@ DepthFirstSearchEngine::process_solution() {
   g_statistics->set_timer ( t_statistics );
   // Compute RMSD
   real curr_rmsd = Rmsd::rmsd_compare( 0, g_target.get_bblen() - 1 );
-  g_statistics->set_best_rmsd( protein, curr_rmsd );
+  //g_statistics->set_best_rmsd( protein, curr_rmsd );
+  g_statistics->set_best_energy( energy );
 #endif  
 
 #ifdef WRITE_OUTPUT_PDB_FILE
   /// Store every result
   //g_output->store_results();
   /// Store just the best result
-  if ( g_statistics->rmsd_is_improved() ) g_output->store_best_results( -1, energy );
+  if ( g_statistics->energy_is_improved() ) g_output->store_best_results( -1, energy );
   if ( g_statistics->get_solutions_found() % 10000 == 0 ) {
     g_output->dump();
   }
@@ -300,8 +301,8 @@ DepthFirstSearchEngine::process_solution() {
     g_statistics->stopwatch ( t_search );
     std::cout << dbg << g_statistics->get_solutions_found() << " Solutions Found."
 	      << "[time: " << g_statistics->get_timer (t_search)
-	      << " s.] / Best RMSD: "
-	      << g_statistics->get_rmsd(protein) << endl;
+	      << " s.] / Best Energy: "
+	      << g_statistics->get_energy() << endl;
   }
   g_statistics->stopwatch (t_statistics);
 #endif
@@ -323,5 +324,5 @@ DepthFirstSearchEngine::dump_statistics (std::ostream &os) {
      << g_statistics->get_solutions_found()
      << " | Seach time: "
      << g_statistics->get_total_timer (t_search)
-     << " s.| Best Rmsd: " << g_statistics->get_rmsd ( protein ) << "A]\n";
+     << " s.| Best Energy: " << g_statistics->get_energy() << "]\n";
 }//-

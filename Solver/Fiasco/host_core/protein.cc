@@ -200,7 +200,7 @@ Protein::load_protein (string filename, string chain, string pdb_code) {
       if (ok) {
 	// Backbone
 	if (type == N || type == CA || type == CB || type == O){
-	  Atom a (x, y, z, type);
+	  Atom a (x, y, z, type, nres);
 	  backbone.push_back(a);
 
 	  if (type == CA) {

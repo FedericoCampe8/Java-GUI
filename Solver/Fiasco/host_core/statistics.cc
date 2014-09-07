@@ -23,6 +23,7 @@ Statistics::Statistics(int argc, char* argv[])
     solutions_to_file            ( 0 ),
     t_search_limit               ( 0 ),
     t_total_limit                ( 0 ),
+    energy                       ( 1000 ),
     result_is_improved           ( true ) {
   
   /* Process the input parameters */
@@ -61,6 +62,11 @@ Statistics::~Statistics() {
   if (loop_search_space_dim)
     delete[] loop_search_space_dim;
 }//-
+
+bool
+Statistics::energy_is_improved () {
+  return rmsd_is_improved();
+}
 
 bool
 Statistics::rmsd_is_improved () {
@@ -198,7 +204,16 @@ Statistics::set_rmsd (prot_struct_type t, real r) {
   _RMSD_ensemble.push_back( r );
 }//-
 
-void 
+void
+Statistics::set_best_energy ( real e ) {
+  if ( e < energy ) {
+    result_is_improved = true;
+    energy = e;
+    stopwatch (t_search);
+  }
+}
+
+void
 Statistics::set_best_rmsd ( prot_struct_type t, real r ) {
   if ( r < rmsd[t] ) {
     result_is_improved = true;
@@ -216,6 +231,11 @@ Statistics::set_best_rmsd ( prot_struct_type t, real r ) {
 real 
 Statistics::get_rmsd (prot_struct_type t) {
   return rmsd[t];
+}//-
+
+real
+Statistics::get_energy () {
+  return energy;
 }//-
 
 std::vector<real>
@@ -381,7 +401,7 @@ Statistics::dump (std::ostream &os) {
   os << "SEARCH SPACE PROERTIES" << std::endl
      << "  No. nodes [explorable/explored] : [" 
      << get_loop_search_space_size()  << " / " 
-     << get_search_space_explored()         << std::endl 
+     << get_search_space_explored()         <<  "]" << std::endl 
      << "  No. nodes Filtered (JMf)        :  " 
      << get_loop_search_space_size() - get_solutions_found() <<  std::endl
      // << get_filtered_search_space()   << std::endl
@@ -393,10 +413,14 @@ Statistics::dump (std::ostream &os) {
      // << get_clustering_avg_distance_error() << std::endl;
 
   os << "CONFORMATIONS " << std::endl 
+     /*
      << "  Best Loop RMSD                  :  "
      << get_rmsd (p_loop) << std::endl
      << "  Best Prot RMSD                  :  "
      << get_rmsd (protein) << std::endl
+     */
+     << "  Best Energy                     :  "
+     << get_energy() << std::endl
      << "  No. leaves [possible/reached]   : [" 
      << get_numof_possible_conformations() << " / "
      << get_solutions_found() << "]" << std::endl;

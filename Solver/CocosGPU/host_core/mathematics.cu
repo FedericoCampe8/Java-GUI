@@ -69,7 +69,10 @@ Math::exponential_moving_avg (real alpha,real current_val, real prev_avg){
 
 real
 Math::truncate_number ( real n, int n_of_decimals ) {
-  int ten_to = pow ( 10, n_of_decimals );
+  int ten_to =  10;
+  int i = 1;
+  while ( i < n_of_decimals ) 
+    { ten_to *=  ten_to; i++; }
   double intpart, fractpart;
   fractpart =  modf ( n , &intpart);
   fractpart *= ten_to;
@@ -285,7 +288,7 @@ Math::torsion_angle ( real* a, real* b, real* c, real* d ) {
   real vec_prod[3];
   vcross ( abc, bcd, vec_prod );
   real val = vdot( cb, vec_prod );
-  if ( abs( val < CLOSE_TO_ZERO_VAL ) ) val = 0.0;
+  if ( (int)abs( val < CLOSE_TO_ZERO_VAL ) ) val = 0.0;
   if ( val < 0.0 ) angle *= -1;
   return angle;
 }//torsion_angle

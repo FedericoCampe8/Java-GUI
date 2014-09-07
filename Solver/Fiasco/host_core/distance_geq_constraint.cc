@@ -47,17 +47,17 @@ DistanceGEQConstraint::DistanceGEQConstraint
       // Add dependencies
       this->add_dependencies();
       g_constraints.push_back (this);
-    }
-    
+
+
 #ifdef VERBOSE_GEQ
       std::cout << "DISTANCE_GEQ constraint (c_" << get_id() 
 		<< ") created : ";
       
-      ::cout << "CA_" << vpt[i]->idx() << ", ";  
-      }
-      std::cout << std::endl;
+      std::cout << "CA_" << vpt1_idx << ", " << vpt2_idx 
+		<< " dist: " << squared_distance << std::endl;
+
 #endif
-     // break; 
+    }
   }
   
   // invalidate parser position for next constraint handling
@@ -104,7 +104,7 @@ DistanceGEQConstraint::synergic_consistency
 
 void 
 DistanceGEQConstraint::dump(bool all) {
-  std::cout << "Distance LEQ constraint (c_" << get_id()  << ")  ";
+  std::cout << "Distance GEQ constraint (c_" << get_id()  << ")  ";
   if (all) {
     std::cout << "Var d(PT_" << vpt.front()->idx()
 	      << " PT_" << vpt.back()->idx()

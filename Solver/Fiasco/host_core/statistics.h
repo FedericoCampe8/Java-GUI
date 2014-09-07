@@ -22,6 +22,7 @@ class Statistics {
   
   size_t solutions_found;
   size_t solutions_to_file;
+  real energy;
   real rmsd[prot_struct_size]; 
 
   timeval time_stats[t_stat_size];  
@@ -57,6 +58,7 @@ class Statistics {
   long double get_loop_search_space (uint lev);
 
   bool rmsd_is_improved();
+  bool energy_is_improved();
   void incr_soluions_found(uint n=1);
   size_t get_solutions_found();
   void incr_solutions_tofile(uint n=1);
@@ -84,7 +86,9 @@ class Statistics {
 
   void set_rmsd (prot_struct_type t, real r);
   void set_best_rmsd (prot_struct_type t, real r);
+  void set_best_energy ( real r );
   real get_rmsd (prot_struct_type t);
+  real get_energy ();
   std::vector<real> get_rmsd_ensemble ();
 
   void set_search_timeout (double sec);
