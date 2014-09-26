@@ -12,6 +12,7 @@
 #include "search_engine.h"
 #include "typedefs.h"
 #include <vector>
+#include <unordered_map>
 #include <iostream>
 
 class VariableFragment;
@@ -23,6 +24,18 @@ class DepthFirstSearchEngine : public SearchEngine {
 
   void goto_next_level(const VariableFragment *v);
   void goto_prev_level(const VariableFragment *v);
+
+  int first_frg_ref;
+  int last_frg_ref;
+  
+  /**
+   * @note This map is used to identify
+   *       whether a variable belongs to a special fragment
+   *       or not in order to decide if the current variable
+   *       must be labeled (i.e., not belonging) or not (i.e., 
+   *       index within a special fragment).
+   */
+  std::unordered_map<int, bool> _within_special_frg;
 
 protected:
   VariableFragment* variable_selection ();

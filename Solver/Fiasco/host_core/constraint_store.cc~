@@ -148,6 +148,7 @@ ConstraintStore::arc_consistency3(size_t trailtop) {
 
     // Constraint resets the trigger causes
     //c->reset_causes();
+    //c->clear_clauses();
     c->clear_causes();
     if (!failing) {
 #ifdef CSTORE_DBG

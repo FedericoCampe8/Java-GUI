@@ -753,3 +753,66 @@ Utilities::convert_hilbert_value_to_point (const bitmask_t& hilbert_value, point
 }//-
 
 
+// bool = true (left -> right)
+void
+Utilities::calculate_aa_points( bool dir, real bb[], real x_CA, real y_CA, real z_CA ) {
+  real x = x_CA, y = y_CA, z = z_CA;
+  
+  // X offset values
+  real l_can_x = 1.283;   // x: N  <- Ca
+  real l_nc_x  = 1.109;   // x: C  <- N
+  real l_cac_x = 1.301;   // x: Ca -> C
+  real l_cn_x  = 1.109;   // x: C  -> N
+  // Y offset values
+  real l_can_y = 0.696;   // y: N  <- Ca
+  real l_nc_y  = 0.734;   // y: C  <- N
+  real l_cac_y = 0.766;   // y: Ca -> C
+  real l_cn_y  = 0.734;   // y: C  -> N
+  real l_nh_y  = 1.000;   // y: N <-> H
+  real l_co_y  = 1.240;   // y: C <-> O
+  
+  if ( dir ) {
+    l_can_y *= -1.0;
+    l_nc_y  *= -1.0;
+    l_cac_y *= -1.0;
+    l_cn_y  = l_nc_y;
+    l_nh_y  *= -1.0;
+    l_co_y  *= -1.0;
+  }
+  ///LEFT-C
+  bb[ 0 ]  = x - l_can_x - l_nc_x;
+  bb[ 1 ]  = y + l_can_y - l_nc_y;
+  bb[ 2 ]  = z;
+  ///LEFT-O
+  bb[ 3 ]  = x - l_can_x - l_nc_x;
+  bb[ 4 ]  = y + l_can_y - l_nc_y - l_co_y;
+  bb[ 5 ]  = z;
+  ///LEFT-H
+  bb[ 6 ]  = x - l_can_x;
+  bb[ 7 ]  = y + l_can_y + l_nh_y;
+  bb[ 8 ]  = z;
+  ///LEFT-N
+  bb[ 9 ]  = x - l_can_x;
+  bb[ 10 ] = y + l_can_y;
+  bb[ 11 ] = z;
+  ///CENTRAL-CA
+  bb[ 12 ] = x;
+  bb[ 13 ] = y;
+  bb[ 14 ] = z;
+  ///RIGHT-C
+  bb[ 15 ] = x + l_cac_x;
+  bb[ 16 ] = y + l_cac_y;
+  bb[ 17 ] = z;
+  ///RIGHT-O
+  bb[ 18 ] = x + l_cac_x;
+  bb[ 19 ] = y + l_cac_y + l_co_y;
+  bb[ 20 ] = z;
+  ///RIGHT-H
+  bb[ 21 ] = x + l_cac_x + l_cn_x;
+  bb[ 22 ] = y + l_cac_y - l_cn_y - l_nh_y;
+  bb[ 23 ] = z;
+  ///RIGHT-N
+  bb[ 24 ] = x + l_cac_x + l_cn_x;
+  bb[ 25 ] = y + l_cac_y - l_cn_y;
+  bb[ 26 ] = z;
+}//calculate_aa_points

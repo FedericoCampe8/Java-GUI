@@ -37,8 +37,6 @@ ConstraintFragment::ConstraintFragment (VariableFragment *f_ptr,
 
 bool
 ConstraintFragment::propagate (int trailtop) {
-  static bool first_propagation_done = false;
-
   string dbg = "ConstraintFragment::propagate() - ";
   VariableFragment* variable = vfrag.at(0);
   int label = variable->get_label();
@@ -58,13 +56,12 @@ ConstraintFragment::propagate (int trailtop) {
   Fragment f_geo(variable->domain.at(label));
   int vpt_s = f->get_bb_s(); // C'
   int vpt_e = f->get_bb_e(); // N
-
+    
   // Check proagation conditions
   bool propagate_conditions = false;  
   if (variable->assembly_direction() == LEFT_TO_RIGHT) {
     propagate_conditions = 
-      //vpt_s == 0 ||
-      !first_propagation_done ||
+      vpt_s == 0 ||
       (g_logicvars->var_point_list[vpt_s+0].is_ground() &&
        g_logicvars->var_point_list[vpt_s+1].is_ground() &&
        g_logicvars->var_point_list[vpt_s+2].is_ground());
@@ -88,22 +85,17 @@ ConstraintFragment::propagate (int trailtop) {
   if (propagate_conditions) {
     // For the first fragment we need a special treatment of the 
     // first two atoms C' O not used -- 
-    // to simplify the operation we do not translate points on 0,0,0         
-      if (first_propagation_done) {
-	f_geo.overlap (*hook, variable->assembly_direction());
-      }
-      first_propagation_done = true;     
+    // to simplify the operation we do not translate points on 0,0,0    
+    if (vpt_s > 0) {
+      f_geo.overlap (*hook, variable->assembly_direction());
+    }      
       f->copy_rot_mat(f_geo);
       f->copy_sh_vec(f_geo);
   }
 
-   //f->dump();
-   //getchar();
-  
     // Access to the Pt Variables starting from atom ptvar_start
     uint skip = 0;
-    // C O [N CA .. ] 
-    if (vpt_s == 0 )
+    if (vpt_s == 0)
       while (!f->backbone[skip].is_type(N)) 
 	skip++;
     for (uint i=0; i+skip < f->backbone_len(); i++) {
@@ -114,27 +106,25 @@ ConstraintFragment::propagate (int trailtop) {
       
       VariablePoint* p = &(g_logicvars->var_point_list[i + vpt_s]);
       VariablePoint p_aux = g_logicvars->var_point_list[i + vpt_s];
-
-      
       
       // Set the point variable to ground      
       if (!p->is_ground()) {
-        real ol[3],oh[3];
-        memcpy(ol, p->lower_bound, sizeof(point));
-        memcpy(oh, p->upper_bound, sizeof(point));
-        p_aux.set_ground(f_geo.backbone[i+skip]);
-	
-        if(p_aux.is_failed()) {
-          g_statistics->incr_propagation_failures(__c_fragment);
-          if (hook) delete hook;
-          return false;
-        }
-        if (p_aux.is_changed()) {
-          p->set_ground (f_geo.backbone[i+skip]);
-          p->in_var_fragment (f_geo.get_id());
+	real ol[3],oh[3];
+	memcpy(ol, p->lower_bound, sizeof(point));
+	memcpy(oh, p->upper_bound, sizeof(point));
+	p_aux.set_ground(f_geo.backbone[i+skip]);
+	  
+	if(p_aux.is_failed()) {
+	  g_statistics->incr_propagation_failures(__c_fragment);
+	  if (hook) delete hook;
+	  return false;
+	}
+	if (p_aux.is_changed()) {
+	  p->set_ground (f_geo.backbone[i+skip]);
+	  p->in_var_fragment (f_geo.get_id());
           p->set_last_trailed (trailtop); // save current-state
-          g_constraintstore.upd_changed(p);
-          g_trailstack.trail_variable_point (p, ol, oh, trailtop);
+	  g_constraintstore.upd_changed(p);
+	  g_trailstack.trail_variable_point (p, ol, oh, trailtop);
         }
       }
     }

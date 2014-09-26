@@ -59,7 +59,11 @@ typedef struct {
   real * tors_corr;
   aminoacid * aa_seq;
   ss_type* secondary_s_info;
+
+  /// GUI params
+  bool fix_fragments; // fixes special fragments to their original position
 } GLB_params;
+
 
 extern AtomGrid g_grid;
 extern std::vector<Fragment> g_assembly_db;

@@ -418,7 +418,7 @@ Fragment::overlap (const Anchor& hook, AssemblyDirection /*growing_chain_*/direc
   Math::vnorm (y);
   Math::vnorm (z);
 
-  // Build the Rotation matrix (orthonormal)
+  // Build the Rotation matrix (orthonormal)  
   for (uint i = 0; i < 3; i++) {
     rot_m[i][0] = x[i];  
     rot_m[i][1] = y[i]; 

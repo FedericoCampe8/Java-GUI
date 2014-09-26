@@ -63,12 +63,12 @@ DepthFirstSearchEngine::DepthFirstSearchEngine (int argc, char* argv[])
 	for ( int ii = i; ii < i+var_selected->get_length(); ii++ )
 	  _within_special_frg[ ii ] = true;
     }
+    
+    // Prepare for labeling
+    first_frg_ref = index_special;
+    last_frg_ref  = index_special + max_nres;
   }
  
-  // Prepare for labeling
-  first_frg_ref = index_special;
-  last_frg_ref  = index_special + max_nres;
-  
   for ( int i = first_frg_ref; i < height; i++ )
     g_logicvars->var_fragment_list[i].set_assembly_direction ( LEFT_TO_RIGHT );
   

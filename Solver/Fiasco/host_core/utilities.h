@@ -82,6 +82,8 @@ namespace Utilities{
   int get_bbidx_from_aaidx (uint aaidx, atom_type type);
   int get_aaidx_from_bbidx (uint bbidx, atom_type type);
 
+  void calculate_aa_points( bool dir, real bb[], real x_CA=0, real y_CA=0, real z_CA=0 );
+
 }//-
 
 #endif

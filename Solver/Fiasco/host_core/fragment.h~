@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-enum AssemblyDirection {RIGHT_TO_LEFT=0, LEFT_TO_RIGHT=1};
+enum AssemblyDirection {RIGHT_TO_LEFT, LEFT_TO_RIGHT};
 class Atom;
 class Anchor;
 class VariableFragment;

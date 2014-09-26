@@ -17,11 +17,9 @@ class BundleConstraint : public Constraint {
 
  public:
   // <label F1, label F2>
-  std::pair<int, int> bundle_info; // HACK! sobstuite this with a vect!
+  // std::pair<int, int> bundle_info; // HACK! sobstuite this with a vect!
   
-  BundleConstraint (std::pair<VariableFragment*, VariableFragment*> vf_ptr, 
-		    std::pair<int, int> l_bundle, bool bi = false);
-   
+  BundleConstraint (std::vector<VariableFragment*> vf_ptr); 
   bool propagate (int trailtop);
   bool consistency ();
   bool check_cardinality (size_t& backjump) {return true; }

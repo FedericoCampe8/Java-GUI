@@ -33,7 +33,7 @@ struct domain_frag_info {
   
   domain_frag_info();
   domain_frag_info (const domain_frag_info& other); 
-  domain_frag_info& operator= (const domain_frag_info& other);
+  domain_frag_info& operator (const domain_frag_info& other);
   ~domain_frag_info() {};
 };
 //-

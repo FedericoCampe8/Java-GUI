@@ -84,6 +84,7 @@ Output::store_results ( uint atom_s, uint atom_e, real energy, real rmsd, bool b
     x = g_logicvars->var_point_list.at(i)[0];
     y = g_logicvars->var_point_list.at(i)[1];
     z = g_logicvars->var_point_list.at(i)[2];
+    
     s <<"ATOM   "<< setw(4)<<i+1<<"  ";
     if (i%4 == NITROGEN_ATOM){
       s<<"N   ";

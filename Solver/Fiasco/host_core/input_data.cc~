@@ -2,7 +2,7 @@
 #include "utilities.h"
 #include "globals.h"
 #include "atom.h"
-#include "mathematics.h"
+
 
 #include "variable_point.h"
 #include "logic_variables.h"
@@ -311,8 +311,7 @@ Input_data::load_constraint_file (vector<Fragment>& fragment_set) {
       assert (f_spec != NULL);
 
       // Read atoms details
-      while (pdb_buff.compare(0, endmdl.size(), endmdl) != 0) 
-      {
+      while (pdb_buff.compare(0, endmdl.size(), endmdl) != 0) {
 	in_pdbfile >> pdb_buff;
 	if(pdb_buff.compare(atom) == 0) {
 	  in_pdbfile >> pdb_buff;	   // N of atom
@@ -346,31 +345,21 @@ Input_data::load_constraint_file (vector<Fragment>& fragment_set) {
 
       // Set end offset on target
       f_spec->bb_end = f_spec->bb_start + backbone.size()-1;
- 
       // Create the fragment
       Fragment frag 
 	(f_spec->frag_no, special, f_spec->pid, f_spec->offset_pdb, 
 	 f_spec->aa_start, f_spec->aa_end, f_spec->bb_start, f_spec->bb_end, 
-	 1, 1.0, aa_seq, backbone);
-      
+	 1, 1.0, aa_seq, backbone); 
 
-      // Set end offset on target
-      f_spec->bb_end = f_spec->bb_start + backbone.size()-1;
-      
       // check for boundle constraint
       if( g_params.fix_fragments )
       {
+	
 	// check if this is the first fragment of the bundle
 	if (f_spec->frag_no == frag_list[ 0 ].frag_no ) {
-
-	  if( frag.backbone[ 0 ].is_type( N ) ) {
-	    Math::set_identity(frag.rot_m);
-	    Math::set_identity(frag.shift_v);
-	  } else {
-	    frag.compute_normal_base(0);
-	    frag.change_coordinate_system();
-	  }
-
+	  frag.compute_normal_base(0);
+	  frag.change_coordinate_system();
+	  
 	  // link other fragments of the bundle with this one (will be inserted
 	  // later at the end of the fragment_set 
 	  int curr_frag_idx = f_spec->idx_bb;//fragment_set.size();
@@ -383,16 +372,10 @@ Input_data::load_constraint_file (vector<Fragment>& fragment_set) {
       }
       else {
 	// single fragments needs to be normalized as default
-	if( frag.backbone[ 0 ].is_type( N ) ) {
-	  Math::set_identity(frag.rot_m);
-	  Math::set_identity(frag.shift_v);
-	} else {
-	  frag.compute_normal_base(0);
-	  frag.change_coordinate_system();
-	}
+	frag.compute_normal_base(0);
+	frag.change_coordinate_system();
       }
       fragment_set[ f_spec->idx_bb ] = frag;
-            
       // fragment_set.push_back (frag);
       backbone.clear();
     } // model processing ends here

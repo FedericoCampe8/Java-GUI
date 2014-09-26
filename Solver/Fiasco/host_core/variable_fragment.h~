@@ -69,8 +69,6 @@ class VariableFragment {
   Fragment operator[] (uint i) const;
   Fragment at(uint i) const;
   void reset ();
-  bool is_special () { return domain[0].nres() > 1; }
-  int get_length  () { return domain[0].nres();     }
 
   void add_domain_elem (const Fragment&);
   void rm_domain_elem (uint);
