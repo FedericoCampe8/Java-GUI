@@ -158,16 +158,22 @@ int main (int argc, char* argv[]) {
     new AlldistantConstraint();
 
   //  Centroid Constraints
-  for (uint i=1; i < g_target.get_nres()-1; i++) {
-    int bb1 = Utilities::get_bbidx_from_aaidx (i-1, CA);
-    int bb2 = Utilities::get_bbidx_from_aaidx (i,   CA);
-    int bb3 = Utilities::get_bbidx_from_aaidx (i+1, CA);
-    CentroidConstraint *cg = 
-      new CentroidConstraint (&g_logicvars->var_point_list[bb1],
-			      &g_logicvars->var_point_list[bb2],
-			      &g_logicvars->var_point_list[bb3]);
+ for (int i=0; i < argc; i++) {
+  if (!strcmp ("--constraint_cg", argv[ i ])) {
+      for (uint i=1; i < g_target.get_nres()-1; i++) {
+        int bb1 = Utilities::get_bbidx_from_aaidx (i-1, CA);
+        int bb2 = Utilities::get_bbidx_from_aaidx (i,   CA);
+        int bb3 = Utilities::get_bbidx_from_aaidx (i+1, CA);
+        CentroidConstraint *cg = 
+          new CentroidConstraint (&g_logicvars->var_point_list[bb1],
+                      &g_logicvars->var_point_list[bb2],
+                      &g_logicvars->var_point_list[bb3]);
+      }
+      std::cout << "CG constraint enabled\n";
+      break;
   }
-
+ }
+    
   if(  g_params.fix_fragments )
   {
     for(int i=0; i<bundle_fragments.size()-1; i++)

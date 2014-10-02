@@ -129,7 +129,9 @@ AtomGrid::query (const point& vp, atom_type type, int ref_aa) {
             disty = space[idx].atom_list[a][1] - vp[1];
             distz = space[idx].atom_list[a][2] - vp[2];
             dist = sqrt(distx*distx + disty*disty + distz*distz);
-	    
+
+        if(dist <= 0) continue;
+              
 	    atom_type other_type = 
 	      space[idx].atom_list[a].type;
             atom_radii other_radius = 

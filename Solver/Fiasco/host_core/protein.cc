@@ -100,13 +100,31 @@ Protein::load_protein (string filename, string chain, string pdb_code) {
   atom_type type = X;
   flag ok = 0;
 
-  ifstream target (filename.c_str());
-  cout << " FILENAME " << filename << " " << endl;
-  cout << " *PDBCODE " << pdb_code << " " << endl;
-  if (!target.is_open()) {
-    cout << "Error: Unable to open the file " << filename << " in loading the target protein" << endl;
-      return;
-  }
+    ifstream target ( filename.c_str() );
+    if ( !target.is_open() ) {
+        string new_file;
+        int ctr = 0;
+        for ( auto c : filename ) {
+            if ( c == '.') {
+                if ( ctr > 0 &&
+                    ctr != (filename.size() - 1) &&
+                    filename[ctr-1] != '.' &&
+                    filename[ctr+1] != '.' ) {
+                    break;
+                }
+            }
+            ctr++;
+            new_file += c;
+        }
+        new_file += ".pdb";
+        
+        target.open( new_file );
+        if ( !target.is_open() ) {
+            cout << "Error: Unable to open the file " << new_file << " in loading the target protein" << endl;
+            return;
+        }
+    }
+    
   // string name;
   name = filename.substr(0, filename.size() - 4);
   set_name (pdb_code);
